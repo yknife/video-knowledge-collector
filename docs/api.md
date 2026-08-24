@@ -1,15 +1,20 @@
 # API
 
-基础路径：`/api/v1`。字段使用 `snake_case`，时间使用带时区 ISO 8601。
+基础路径：`/api/video-knowledge/v1`。字段使用 `snake_case`，时间使用带时区 ISO 8601。
 
 ## `GET /system/health`
 
-返回 API 与数据库健康状态、版本、环境、时间及当前 `request_id`。请求可携带
-`X-Request-ID`；否则服务端生成 `req_` 前缀标识，响应头与响应体均会返回。
+返回数据库与受监管 Worker 健康状态、版本和时间。
+
+## `GET /system/runtime`
+
+返回 RC 必需媒体组件的可用状态和安全版本信息：yt-dlp、streamget、faster-whisper、FFmpeg、
+ffprobe。响应不包含可执行文件完整路径。
 
 ## Jobs
 
-- `POST /jobs`：创建持久化任务；Sprint 2 支持 `DEMO` 类型。
+- `POST /sources/ingest`：创建普通视频采集任务。
+- `POST /sources/live`：创建直播监控/录制任务。
 - `GET /jobs?status=RUNNING&limit=50`：获取权威任务快照。
 - `GET /jobs/{id}`：获取单个任务。
 - `GET /jobs/{id}/events`：获取持久化状态和进度事件。

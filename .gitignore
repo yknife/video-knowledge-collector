@@ -15,6 +15,7 @@ logs/
 .pytest-cache/
 .runtime/
 .tmp/
+artifacts/
 storage/*
 !storage/.gitkeep
 node_modules/

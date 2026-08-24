@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0-rc.1 - Sprint 10
+
+- Added reproducible Windows NSIS/MSI packaging with fork-aware immutable install stamps.
+- Added verified release manifests and SHA-256 checksums for every installer artifact.
+- Added runtime version readiness for yt-dlp, streamget, faster-whisper, FFmpeg, and ffprobe.
+- Reused Hermes Desktop supervision, model-download UI, update and data-preserving uninstall flows.
+- Added Windows RC CI, user documentation, troubleshooting guidance, and release acceptance matrix.
+
 ## 0.6.0 - Sprint 6
 
 - Restored Sprint 1-5 sidebar parity: source preview and collection options, job actions/events,

@@ -1,7 +1,7 @@
 # Video Knowledge Collector
 
-Windows 优先、本地优先的视频知识采集系统。当前仓库已完成详细设计文档中的
-**Sprint 6：Hermes 一体化与 AI 分析**。Hermes Desktop 是唯一用户入口，视频知识采集以
+Windows 优先、本地优先的视频知识采集系统。当前仓库已推进到详细设计文档中的
+**Sprint 10：Windows 打包与发布候选**。Hermes Desktop 是唯一用户入口，视频知识采集以
 默认启用的侧边栏插件运行，不再单独启动 VKC Web/API。
 
 ## 已实现
@@ -72,6 +72,21 @@ Hermes 仍需按其首次启动引导配置模型/provider。
 .\scripts\check.ps1
 ```
 
+## Windows RC
+
+在干净的 `vkc-integration` 提交上构建默认 NSIS 安装包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-rc.ps1
+```
+
+输出位于 `artifacts/windows-rc`，包含安装程序、`install-stamp.json`、SHA-256 和
+`release-manifest.json`。安装包会固定到 `yknife/hermes-agent` 的确切提交，首次启动不会回退到
+官方 Hermes 仓库。MSI 或两种格式可通过 `-Target msi` / `-Target all` 构建。
+
+完整安装说明见 [Windows RC 用户手册](docs/windows-rc-user-guide.md)，发布人员应同时执行
+[发布清单](docs/windows-rc-release-checklist.md)。
+
 规范 API 前缀是 `GET /api/video-knowledge/v1/system/health`。来源采集使用
 `POST /api/video-knowledge/v1/sources/ingest`，媒体库使用
 `GET /api/video-knowledge/v1/media`，知识结果使用
@@ -95,4 +110,4 @@ Bearer 认证；Desktop 侧边栏通过同一 Hermes Gateway 的 profile/session
 - `thirdparty/hermes-agent/archive/video_knowledge_pre_migration`：Sprint 1–5 独立 Web/根工程归档，不参与运行或打包
 - `thirdparty/hermes-agent/plugins/video_knowledge/backend/config`：默认配置与日志配置示例
 - `docs/adr`：架构决策记录
-- `scripts`：Windows 开发和校验脚本
+- `scripts`：Windows 开发、校验、RC 构建和制品完整性检查脚本

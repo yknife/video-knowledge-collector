@@ -1,0 +1,46 @@
+name: Windows RC
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Installer target
+        required: true
+        default: nsis
+        type: choice
+        options:
+          - nsis
+          - msi
+          - all
+  push:
+    tags:
+      - 'vkc-v*'
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22
+          cache: npm
+          cache-dependency-path: thirdparty/hermes-agent/package-lock.json
+      - run: uv sync --project thirdparty/hermes-agent --extra dev --frozen
+      - run: npm ci --prefix thirdparty/hermes-agent
+      - name: Build and verify Windows RC
+        shell: powershell
+        run: |
+          $target = '${{ inputs.target }}'
+          if (-not $target) { $target = 'nsis' }
+          .\scripts\build-rc.ps1 -Target $target
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-knowledge-collector-windows-rc
+          path: artifacts/windows-rc/*
+          if-no-files-found: error

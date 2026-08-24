@@ -1,5 +1,19 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-08-24 Sprint 10 Windows release candidate
+
+- Windows RC packaging reuses the single Hermes Desktop Electron Builder NSIS/MSI pipeline. The retired standalone
+  VKC PyInstaller process is intentionally not restored; React ships in `app.asar`, while the Hermes-managed Python
+  checkout/venv remains the only Gateway and Worker runtime.
+- Install stamps now carry a validated GitHub `repository`, branch, and immutable commit. VKC builds bootstrap from
+  `yknife/hermes-agent:vkc-integration` instead of trying to fetch the fork-only commit from NousResearch upstream.
+- `scripts/build-rc.ps1` produces verified installers, SHA-256 records, `install-stamp.json`, and a machine-readable
+  release manifest. A manual/tag-triggered Windows GitHub workflow uploads the verified artifact set.
+- `/system/runtime` and the ASR settings page report safe versions for yt-dlp, streamget, faster-whisper, FFmpeg, and
+  ffprobe without exposing executable paths. Existing Hermes supervision, model download, update, and data-preserving
+  uninstall flows remain authoritative.
+- Added the Windows RC user guide, troubleshooting guide, packaging ADR, and release/VM acceptance checklist.
+
 ## 2026-08-23 bounded llama.cpp structured knowledge analysis
 
 - Structured Hermes Gateway calls now forward the caller's `response_format` to the provider, allowing llama.cpp to

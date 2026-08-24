@@ -1,0 +1,47 @@
+# Windows RC 用户手册
+
+## 支持范围
+
+- Windows 10/11 x64
+- 可安装到非 C 盘和包含空格或中文的用户目录
+- 默认数据目录：`%LOCALAPPDATA%\hermes`
+- 默认安装方式：当前用户安装，无需管理员权限
+
+## 安装
+
+1. 从 GitHub Actions 或 Release 下载 `Hermes-*-win-x64.exe`、`release-manifest.json`。
+2. 用 `Get-FileHash <安装包> -Algorithm SHA256` 对照 manifest。
+3. 运行安装包，可选择非 C 盘目录。
+4. 首次启动按引导配置 Hermes provider。安装器会准备 Git、uv、Python 和受管理运行时。
+5. 打开“视频知识 → ASR 设置”，确认 yt-dlp、streamget、faster-whisper、FFmpeg、ffprobe 均显示可用。
+6. 选择 `small` 模型并下载；CPU 推荐 `small + int8`，NVIDIA GPU 可使用 `float16`。
+7. 在“添加内容”粘贴视频 URL，等待采集、Transcript 和知识结果完成。
+
+首次模型或 CUDA runtime 下载可能超过 15 分钟；15 分钟验收基线使用已有字幕的视频或 CPU small
+模型，并要求网络可访问 GitHub、Python 包源和视频平台。
+
+## 升级与数据保留
+
+直接运行新版安装包或使用 Hermes 更新入口。代码和 Desktop 会更新，以下用户数据保留：
+
+- Session 与定时任务
+- VKC 数据库、媒体、Transcript 和知识结果
+- faster-whisper 模型缓存
+- provider 配置与 profile
+
+卸载时选择“仅 GUI”或“保留用户数据”可在重装后恢复；只有 full uninstall 会删除用户数据。
+执行 full 前应备份 `%LOCALAPPDATA%\hermes`。
+
+## 验证安装来源
+
+RC 目录中的 `install-stamp.json` 应包含：
+
+```json
+{
+  "schemaVersion": 2,
+  "repository": "yknife/hermes-agent",
+  "branch": "vkc-integration"
+}
+```
+
+提交号必须与 `release-manifest.json` 的 `source.hermes_commit` 一致。
