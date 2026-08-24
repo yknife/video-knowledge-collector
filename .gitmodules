@@ -1,0 +1,4 @@
+[submodule "thirdparty/hermes-agent"]
+	path = thirdparty/hermes-agent
+	url = https://github.com/yknife/hermes-agent.git
+	branch = vkc-integration

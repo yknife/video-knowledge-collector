@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22
+          cache: npm
+          cache-dependency-path: thirdparty/hermes-agent/package-lock.json
+      - run: uv sync --project thirdparty/hermes-agent --extra dev --frozen
+      - run: npm ci --prefix thirdparty/hermes-agent
+      - run: uv run --project thirdparty/hermes-agent --extra dev ruff check --isolated --line-length 100 --select E,F,I,UP,B,ASYNC thirdparty/hermes-agent/plugins/video_knowledge/backend thirdparty/hermes-agent/tests/video_knowledge thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py
+      - run: uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/video_knowledge
+      - run: uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/gateway/test_api_server.py thirdparty/hermes-agent/tests/gateway/test_api_server_multiplex_secret_scope.py
+      - run: npm --prefix thirdparty/hermes-agent/apps/desktop run typecheck
+      - run: npm --prefix thirdparty/hermes-agent/apps/desktop exec -- eslint thirdparty/hermes-agent/apps/desktop/src/plugins/video-knowledge
