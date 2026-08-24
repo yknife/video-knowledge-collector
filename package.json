@@ -1,0 +1,10 @@
+{
+  "name": "video-knowledge-collector",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix thirdparty/hermes-agent/apps/desktop run dev",
+    "lint": "npm --prefix thirdparty/hermes-agent/apps/desktop exec -- eslint thirdparty/hermes-agent/apps/desktop/src/plugins/video-knowledge",
+    "test": "npm --prefix thirdparty/hermes-agent/apps/desktop run typecheck",
+    "build": "npm --prefix thirdparty/hermes-agent/apps/desktop run build"
+  }
+}

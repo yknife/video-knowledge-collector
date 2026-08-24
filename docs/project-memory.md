@@ -1,0 +1,269 @@
+# Video Knowledge Collector 项目记忆
+
+## 2026-08-23 bounded llama.cpp structured knowledge analysis
+
+- Structured Hermes Gateway calls now forward the caller's `response_format` to the provider, allowing llama.cpp to
+  enforce JSON Schema grammar instead of treating the schema only as prose.
+- The local Custom/Qwen provider disables llama.cpp thinking with
+  `chat_template_kwargs.enable_thinking=false`; `reasoning_effort=none` and Ollama's `think=false` alone were ignored
+  by the current llama.cpp build and exhausted the 4096-token output budget on hidden reasoning.
+- Knowledge map prompts use compact `s1...sN` citation aliases, restore authoritative database IDs before validation,
+  cap each map chunk at 24 transcript segments, and apply JSON Schema `maxItems`/`maxLength` bounds. Map and reduce
+  coverage checks prevent a schema-valid response from silently dropping input chunks.
+- Runtime regeneration of 《张！嘴！》 completed successfully as knowledge version 7, with 7 chapters, 12 knowledge
+  points, 7 suggested questions, citations from 0 through 206.06 seconds, and no new `finish_reason=length` event.
+  Unsupported bracketed work titles are removed when they do not occur in the transcript. Relevant verification
+  passed with 210 tests.
+
+## 2026-08-23 live monitor cancellation and event compaction
+
+- Cancelling a `RECORD_LIVE` task now disables its persisted live source before cancelling the durable job, so the
+  monitor cannot be re-queued. Retrying the cancelled task re-enables the source and resumes monitoring.
+- The task center collapses consecutive offline polling cycles (`release -> claim -> probe -> wait`) into the latest
+  monitor event, while persisted audit events, recording transitions, failures, and user actions remain intact.
+- Full verification passed with 69 VKC tests, 115 Gateway tests, Desktop typecheck, ESLint, Ruff, formatting, and four
+  Desktop API tests.
+
+## 2026-08-23 task center daily scope and media ownership
+
+- The task center defaults to jobs created since Beijing midnight plus active long-running `RECORD_LIVE` monitors,
+  regardless of monitor creation date. Users can switch back to the complete history and combine either scope with
+  the existing status filter.
+- Job API responses now include their persisted `source_id` and `media_id`. Task cards resolve ownership through the
+  media library, live sources, and finally the input URL so completed, in-progress, and pre-media jobs are identifiable.
+- Full verification passed with 68 VKC tests, 115 Gateway tests, Desktop typecheck, ESLint, Ruff, formatting, and four
+  Desktop API tests.
+
+## 2026-08-23 persistent ASR model download state
+
+- faster-whisper model downloads are coordinated by a process-wide registry. Concurrent requests for the same model
+  reuse one task, and cancelling a page request no longer cancels the underlying Hugging Face download.
+- `/system/asr` exposes `models[].downloading`; the ASR settings page restores that state after navigation, polls
+  while a download is active, and disables the duplicate download action.
+- Regression coverage simulates an abandoned page request and verifies the download continues and the downloader is
+  invoked exactly once. The full verification suite passed with 67 VKC tests, 115 Gateway tests, Desktop typecheck,
+  ESLint, Ruff, formatting, and four Desktop API tests.
+- The local `large-v3-turbo` cache completed successfully (about 1.62 GB), and Hermes was restarted with the fix.
+
+## 2026-08-23 unified video/live content entry
+
+- “直播订阅”独立页面已移除；“添加内容”是视频与直播间的统一入口，创建成功后统一进入任务中心。
+- `/sources/probe` 现在返回 `source_type=VIDEO|LIVE`。已知直播间 URL 由 URL 结构分类并用 StreamGet
+  获取当前开播状态；普通视频继续使用 yt-dlp，yt-dlp 识别出的正在直播内容也会切换为 LIVE。
+- 添加页在识别前只展示链接输入；识别后，普通视频显示画质与字幕优先级，直播显示轮询间隔、
+  录制上限与画质。ASR 模型/设备/精度/语言/VAD/词时间戳和自动知识分析为公共配置。
+- 右侧只展示当前链接的类型、平台、标题、作者、开播状态或视频字幕详情，不再承载订阅列表。
+- Full verification passed with 57 VKC tests, 114 Gateway tests, Desktop typecheck/Vitest, Ruff, formatting,
+  ESLint, and lock consistency. Hermes was restarted with the updated probe contract.
+
+## 2026-08-23 live end-of-stream recovery repair
+
+- The first real Bilibili live smoke test exposed three coupled failures: reconnect progress could move backward by
+  a fraction after ffprobe reconciliation, retrying an offline room ignored valid segments from the previous attempt,
+  and one long `RECORD_LIVE` job blocked the single Worker from claiming other subscriptions and post-processing.
+- Live progress is now monotonic and persisted at most once per recorded second. A retry discovers valid
+  `segment-*.part.mkv` files through the unfinished live session, adopts the session, and finalizes it even when the
+  room is already offline. Paused recordings become `INTERRUPTED` instead of remaining falsely `RECORDING`.
+- Long live recordings now execute as supervised background tasks while the main durable queue continues processing
+  monitoring, ASR, and analysis jobs. Lease, cancellation, retry, and state-machine writes remain unchanged.
+- Runtime recovery validated the real 极客湾 recording: a 354.787-second, 66,932,456-byte segment was remuxed and
+  registered as media `media_01787415981429975600_8bda6ee198`; ASR produced a Transcript and automatic analysis job
+  `job_01787416011655339600_2bd11507b7` reached `SUCCEEDED` with four READY knowledge documents.
+- Full verification passed with 56 VKC tests, 114 Gateway tests, Desktop typecheck/Vitest, Ruff, formatting, ESLint,
+  and lock consistency.
+
+## 2026-08-23 live recording event display compaction
+
+- 任务中心会把一段连续直播录制产生的逐秒 `job.progress` 事件折叠为最新一条，展示最新录制秒数、
+  进度和北京时间。状态转换、断流/重连边界、失败以及后续处理阶段仍独立展示。
+- 底层持久化事件没有被删除或改写，Worker 审计和状态机恢复语义保持不变。
+
+## 2026-08-22 Sprint 8 live monitoring and recording
+
+- Hermes Desktop 的“视频知识”侧边栏新增“直播订阅”页面，可添加、暂停、恢复和立即检测直播来源，
+  并展示监控任务、最近检测时间和最近场次状态。
+- 后端新增直播来源 API、`live_sessions` 持久化场次表和 `RECORD_LIVE` Worker pipeline。
+  离线来源进入可调度的 `WAITING_LIVE`；开播后按场次 key 去重，避免重复启动同一场录制。
+- `StreamGetAdapter` 使用固定版本 `streamget==4.0.9` 解析 Bilibili、Douyin、Douyu、Huya、
+  Twitch 和 YouTube 直播。签名流地址仅在媒体适配器内存和 FFmpeg 参数中使用，不进入任务、
+  数据库、错误或日志。
+- FFmpeg 以 Matroska 分片录制，断流时保留非空分片并最多快速重连三次；录制结束后无损合并、
+  ffprobe 校验并登记原始分片和最终媒体。最终媒体自动创建本地 `INGEST_VIDEO` 后处理任务，
+  复用现有 ASR、Transcript 和 Hermes 知识分析链路。
+- Sprint 8 自动化验证覆盖直播来源去重、StreamGet 状态映射、断流分片保留和桌面类型检查。
+  真实平台 smoke test 仍取决于平台网络可达性、风控/Cookies 和实际开播窗口。
+- `scripts/check.ps1` 全量通过：54 项 VKC tests、114 项 Gateway tests、3 项 Desktop Vitest，
+  以及 Ruff、格式、ESLint、Desktop TypeScript 和 uv lock 一致性检查。Hermes 已重启，运行 profile
+  已迁移至 `20260822_0006`，`live_sessions` 表和受监管 VKC Worker 均已生效。
+
+## 2026-08-22 task-center Beijing time
+
+- Task event timestamps are displayed explicitly in `Asia/Shanghai` (`UTC+8`). SQLite/API datetimes without a
+  timezone suffix are treated as UTC before conversion, avoiding the previous eight-hour error on Beijing hosts.
+- The formatter also normalizes offset-aware timestamps and returns a safe placeholder for malformed values.
+
+## 2026-08-22 local media seek repair
+
+- Transcript and Hermes knowledge timeline clicks already supplied the correct millisecond offset, but the Electron
+  `hermes-media://stream` handler delegated local byte-range reads to `net.fetch(file://...)`. The existing test only
+  asserted that the `Range` header was forwarded and did not prove that the local response was actually partial.
+- Local playback now serves files directly as Range-aware streams with `Accept-Ranges`, `Content-Range`,
+  `Content-Length`, media MIME types, `206` responses, `HEAD` support, and `416` handling for invalid ranges.
+- Runtime verification after restarting Hermes: clicking `0:02` in both the Transcript timeline and Hermes knowledge
+  timeline moved the real media element to approximately `3.3s` while playback continued.
+
+## 2026-08-22 structured-response reliability repair
+
+- A new analysis job failed at 10% with `HERMES_INVALID_RESPONSE` because the
+  local model returned syntactically valid JSON without a usable top-level
+  knowledge summary. The transcript itself was valid UTF-8; apparent mojibake
+  during diagnosis came from PowerShell's default output decoding.
+- `KnowledgeService` now unwraps only known result envelopes and retries a
+  semantically invalid structured response once with an explicit root-shape
+  correction. Strict Pydantic and transcript citation validation still run on
+  every accepted response. Completed map steps are not discarded.
+- The analysis prompt version is `1.0.1`; the retry count is configurable with
+  `VKC_ANALYSIS_STRUCTURED_ATTEMPTS` and defaults to two total attempts.
+- Runtime verification: retried job `job_01787358012404067600_a885212bd0`
+  reached `SUCCEEDED`/100% on attempt 2. Four READY documents were stored: one
+  summary, 10 chapters, 14 knowledge points, and 9 suggested Q&A items.
+
+## 2026-08-22 Hermes knowledge-result runtime repair
+
+- Hermes Desktop now owns an authenticated loopback OpenAI-compatible API-server adapter in the dashboard lifespan. The adapter and the supervised VKC worker use the same process-local key; an environment key takes precedence over a stale persisted secret.
+- VKC bypasses Windows system proxy discovery for loopback Hermes URLs. Remote Hermes URLs retain normal system-proxy behavior.
+- Chat Completions preserves `response_format.json_schema` as an ephemeral agent constraint. VKC requests explicit `structured_mode`, which still uses the configured Hermes provider/model/runtime while omitting unrelated project context files and tools.
+- Local-model calls use a 600-second timeout so the final reduce does not create orphan retries after a premature 180-second timeout.
+- Model JSON parsing selects the last outermost object, applies a narrow field whitelist/normalization, then performs strict Pydantic validation. Citation IDs are filtered against the current transcript, untraceable items are dropped, and citation time ranges are derived from authoritative segments.
+- Analysis progress is persisted after every map/reduce step instead of appearing stuck at 10%.
+- Runtime verification: job `job_01787319051803896900_87f6ce14fd` reached `SUCCEEDED`/100%; four READY documents were stored (summary, 13 chapters, 9 knowledge points, 6 suggested Q&A items).
+- Full `scripts/check.ps1` verification passed: 49 VKC tests, 114 Gateway tests, Desktop typecheck, plugin Vitest, Ruff, formatting, ESLint, and uv lock consistency.
+
+更新时间：2026-08-21
+
+## 当前目标与架构
+
+- Hermes Desktop 是唯一用户入口；VKC 不再单独启动 Web 或 API。
+- VKC 是 Hermes 默认启用的“视频知识”侧边栏，路由为 `/video-knowledge`。
+- VKC REST API 注册在 Hermes `gateway/platforms/api_server.py`，前端通过插件命名空间访问，
+  与 Hermes 共用网关、认证和 profile。
+- Hermes 启动时按 profile 执行 VKC 数据库迁移，并自动拉起、监管和停止 VKC Worker。
+- 活动前后端代码全部位于 `thirdparty/hermes-agent`；旧独立工程仅归档，不参与运行或打包。
+
+## 关键目录
+
+- Desktop UI：`thirdparty/hermes-agent/apps/desktop/src/plugins/video-knowledge`
+- Python 后端：`thirdparty/hermes-agent/plugins/video_knowledge/backend`
+- Dashboard transport：`thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py`
+- 共享 Gateway：`thirdparty/hermes-agent/gateway/platforms/api_server.py`
+- VKC 测试：`thirdparty/hermes-agent/tests/video_knowledge`
+- 旧工程归档：`thirdparty/hermes-agent/archive/video_knowledge_pre_migration`
+
+## 已完成能力
+
+- Sprint 1–5：健康状态、持久化任务状态机、租约/重试、URL 探测与去重、yt-dlp 下载、
+  FFmpeg/ffprobe、字幕规范化、Transcript/FTS 搜索、faster-whisper ASR、长音频分片检查点。
+- Sprint 6：Hermes 内聚、共享网关、profile 隔离、Worker supervision、Hermes Client、
+  Map-Reduce 知识分析及摘要/章节/知识点/建议问答。
+- Sprint 7：可信问答复用 Hermes Chat Workspace 的 Conversation/Message 持久化、流式回答和
+  工具事件，VKC 不维护独立聊天界面或会话存储。“问知识库/问 Hermes”会新建 Hermes 会话并
+  注入库级或单视频范围；后端提供 `search_videos`、`search_transcript`、`get_segments`
+  三个 profile 内只读工具，回答中的 `video-cite` 可跳回对应视频时间点。
+- Sprint 8：直播来源订阅、轮询调度、场次去重、StreamGet 解析、FFmpeg 分片录制和断流重连，
+  录制完成后复用 ASR/Transcript/Hermes Pipeline，不引入独立直播处理链路。
+- 侧边栏已恢复迁移时遗漏的完整交互：探测确认、画质/字幕语言、自动分析、
+  tiny/base/small/medium/large-v3 模型、CPU/CUDA/精度/语言/VAD/词时间戳、任务筛选和操作、
+  持久化事件 WebSocket、媒体资产、本地 Range 视频预览、Transcript 搜索与点击跳转、
+  知识结果和 ASR 资源建议。
+- Windows CUDA 运行库由固定版本的 NVIDIA Python wheels 提供；ASR 检测器会注册虚拟环境内的
+  cuBLAS/cuDNN/NVRTC DLL 目录，不再依赖系统安装 CUDA Toolkit。RTX 5060 Ti 上已验证
+  `ctranslate2` CUDA 检测、DLL 加载及 faster-whisper `small + cuda + float16` 模型加载。
+- Windows 媒体下载运行器会同时解析 yt-dlp 的 stdout/stderr；下载进度默认写入 stderr，必须
+  转发到 Worker 的持久化进度事件，否则长下载会在 UI 中表现为停在 10%。
+
+## 启动与验证
+
+```powershell
+.\scripts\dev.ps1
+.\scripts\check.ps1
+```
+
+- `dev.ps1` 只启动 Hermes Desktop；已有 `node_modules` 时不会因本机 npm engine 区间重复安装失败。
+- 最近一次 Sprint 7 全量验证：VKC pytest 41 项、Hermes Gateway pytest 112 项、
+  Desktop 现有插件 Vitest 3 项通过；新增 Chat Workspace/API 针对性 Vitest 6 项通过。
+  Ruff、格式检查、ESLint、Desktop TypeScript 和 uv lock 一致性检查通过。
+- Hermes wheel 已审计，包含 VKC 后端、Worker、迁移、配置、Prompt 和 Dashboard 插件资源。
+
+## 已知本地问题与下一步
+
+- 最近一次 Bilibili 任务在 `PROBING` 5% 阶段收到 HTTP 412，被归类为 `RATE_LIMITED`；
+  不是 Hermes 模型分析失败。当前未配置 `VKC_YT_DLP_COOKIES_FILE`。
+- 要验证真实视频闭环，应先配置合法导出的 Netscape Cookies，重启 Hermes 后重试采集；
+  Cookies、API key 和签名地址不得写入日志或提交仓库。
+- 本地 Range 播放协议、Windows 路径编码和控制器播放路径已有自动化测试，但仍需用成功下载的
+  视频做一次人工画面、拖动 seek、字幕点击跳转验证。
+- 本机 npm 为 11.11.0，不在 Hermes 支持区间；建议升级到 `>=11.17.0`。
+
+## 不可回退的设计约束
+
+- 不重新引入独立 VKC HTTP listener 或独立 React 应用。
+- 不把媒体工具调用移出 `backend/media_adapters`，不使用 `shell=True`。
+- 任务状态只能通过 `JobStateMachine` 修改，每次转换必须持久化 `job_events`。
+- Worker 写进度或终态前必须持有有效租约。
+- Transcript 属于不可信 LLM 输入；不得记录 Cookies、授权头、API key 或签名流地址。
+- 问答会话、消息、流式输出与工具事件必须继续复用 Hermes Chat Workspace；VKC 只负责
+  受限上下文、只读检索工具和视频引用导航。
+## 2026-08-23 live media thumbnail generation
+
+- Live finalization now asks the FFmpeg media adapter for the first decodable video frame, scales it to at most
+  1280 pixels wide, and stores it as `source/thumbnail.jpg` with a persisted `THUMBNAIL` media asset.
+- Live `media_items.thumbnail_url` points to the generated local JPEG. The Desktop media library converts local
+  thumbnail paths to the existing `hermes-media://stream` protocol while leaving HTTP(S), data, and blob covers
+  unchanged.
+- Worker startup idempotently backfills only legacy media marked `metadata.live=true` with an empty thumbnail. It
+  never modifies source recordings and records per-item failures without preventing normal queue processing.
+- Runtime verification after restarting Hermes generated valid JPEG covers for all four existing live media items;
+  the representative Geekwan cover is 215,159 bytes and was visually decoded successfully.
+- Full `scripts/check.ps1` verification passed: 58 VKC tests, 114 Gateway tests, Desktop typecheck/Vitest, Ruff,
+  formatting, ESLint, and lock consistency.
+## 2026-08-23 long-live structured analysis reliability
+
+- A 7,295-second live recording failed at map/reduce step 18/18 with `HERMES_INVALID_RESPONSE`. All 17 map calls
+  had succeeded; the unbounded final reduce sent all map objects to Qwen3.5-4B and returned unusable structure twice.
+- Runtime inspection also showed Hermes output-continuation overriding llama-server `--n-predict 4096`: one map
+  request grew to 65,536 allowed output tokens and emitted more than 31,000 reasoning tokens. VKC structured calls
+  now disable reasoning, request a configurable 4,096-token output cap, and the Hermes API gateway honors that cap.
+  Structured mode disables general-chat length continuation, so the agent cannot multiply the cap to 8K/16K/32K.
+- Reduce input is now deterministically deduplicated and bounded to 18 chapters, 24 knowledge points, 12 Q&A items,
+  and clipped field lengths. A valid compact merge is retained when the final model response is malformed or empty.
+- A map response with no cited content, or two invalid structured responses, falls back to a small verbatim transcript
+  excerpt with real segment IDs. It produces a chapter, evidence item, and basic Q&A without inventing factual claims.
+- Runtime repair job `job_01787449068602406100_7b8873321b` reached `SUCCEEDED`/100%. Version 2 documents are READY
+  and non-empty: 18 chapters, 23 knowledge points, 12 suggested Q&A items, and one summary; all citation IDs resolve
+  to the authoritative transcript. Three chapters and four knowledge points used the explicit transcript fallback.
+- Full verification passed with 60 VKC tests, 115 Gateway tests, Desktop typecheck/Vitest, Ruff, formatting, ESLint,
+  and lock consistency.
+
+## 2026-08-23 live thumbnail display repair
+
+- The generated live JPEG files and persisted paths were valid, but Electron's protected `hermes-media://` handler
+  rejected `.jpg` requests with HTTP 415 because its extension allowlist contained only audio/video formats.
+- The handler now permits JPEG, PNG, and WebP thumbnail assets and returns browser-readable image MIME types while
+  retaining the existing protected path resolver and rejection of unrelated file extensions.
+- Runtime verification after restarting Hermes showed all five local live thumbnails fully decoded in the media
+  library (`complete=true`, `naturalWidth=1280`, `naturalHeight=720`).
+
+## 2026-08-23 knowledge timeline full-duration coverage
+
+- The 68:30 Karpathy video's READY transcript was complete through 68:28, but its version-1 knowledge documents
+  stopped at 44:24. All 14 map calls had run; the old final reduce silently retained only the earlier map results.
+- Compact reduce fallback now reserves chronological representatives from each map chunk, samples summaries across
+  the full recording, and rejects an otherwise valid reduce response when it drops the first or final map boundary.
+- A completely unparseable/truncated Hermes client response is now handled like a schema-invalid response. Non-
+  retryable formatting failures use cited transcript fallback after the configured attempts; retryable transport
+  failures still propagate normally.
+- Runtime repair job `job_01787455296504048500_256d4c7935` succeeded. Version-2 documents contain 18 chapters,
+  24 knowledge points, and 12 suggested Q&A items; chapter citations reach 67:06 and knowledge-point citations reach
+  67:20, versus 44:24 previously. The final transcript segment remains complete at 68:28.
+- Full verification passed with 63 VKC tests, 115 Gateway tests, Desktop typecheck/Vitest, Ruff, formatting, ESLint,
+  and lock consistency.
