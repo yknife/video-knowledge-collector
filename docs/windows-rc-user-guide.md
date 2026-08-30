@@ -15,7 +15,12 @@
 4. 首次启动按引导配置 Hermes provider。安装器会准备 Git、uv、Python 和受管理运行时。
 5. 打开“视频知识 → ASR 设置”，确认 yt-dlp、streamget、faster-whisper、FFmpeg、ffprobe 均显示可用。
 6. 选择 `small` 模型并下载；CPU 推荐 `small + int8`，NVIDIA GPU 可使用 `float16`。
-7. 在“添加内容”粘贴视频 URL，等待采集、Transcript 和知识结果完成。
+7. 在“添加内容”中选择来源：可以粘贴视频 URL，也可以切换到“本地视频”，填写或选择视频文件，
+   再输入标题（必填）和作者（可选）。faster-whisper 配置下方可为当前内容选择 Hermes 知识分析模型；
+   默认继承 Hermes 全局模型，任务级选择不会修改全局设置。提交后等待采集、Transcript 和知识结果完成。
+
+本地视频支持常见的 MP4、MKV、MOV、AVI、WebM 等格式。识别时应用会把视频复制到受管媒体库，
+不会移动或删除原文件；在复制完成前请勿移动、改名或删除该文件。
 
 首次模型或 CUDA runtime 下载可能超过 15 分钟；15 分钟验收基线使用已有字幕的视频或 CPU small
 模型，并要求网络可访问 GitHub、Python 包源和视频平台。

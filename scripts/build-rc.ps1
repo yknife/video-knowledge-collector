@@ -94,7 +94,7 @@ if (-not (Test-Path -LiteralPath $installStampPath) -or -not (Test-Path -Literal
     throw "Packaged runtime is incomplete: expected app.asar and install-stamp.json in win-unpacked/resources."
 }
 $installStamp = Get-Content -LiteralPath $installStampPath -Raw | ConvertFrom-Json
-if ($installStamp.commit -ne $hermesCommit -or $installStamp.repository -ne $BootstrapRepository) {
+if ($installStamp.schemaVersion -ne 2 -or $installStamp.commit -ne $hermesCommit -or $installStamp.repository -ne $BootstrapRepository) {
     throw "Install stamp does not point to the requested Hermes fork commit."
 }
 

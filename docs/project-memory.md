@@ -1,5 +1,103 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-08-30 provider response-format compatibility
+
+- A 16:17 Xiaomi O3 reanalysis selected `deepseek/deepseek-v4-flash`. The provider rejected every map and reduce
+  request with HTTP 400 `This response_format type is unavailable now`; Hermes Gateway surfaced the provider
+  failure and all eight map chunks consequently used transcript fallback even though the model service stayed up.
+- Structured analysis still prefers provider-enforced `json_schema`. When and only when the provider explicitly
+  reports that `response_format` is unavailable/unsupported, Gateway emits a safe machine-readable capability code
+  and the VKC client performs one compatibility retry with `json_object` plus the identical JSON Schema in the trusted
+  system message. Gateway also adapts known DeepSeek `json_schema` requests directly to its supported `json_object`
+  constraint after resolving the actual provider, avoiding the rejected request entirely. Hermes structured mode,
+  reasoning disablement, output bounds, strict Pydantic validation, and authoritative citation validation remain in
+  force. Unrelated gateway or network failures do not activate the compatibility path.
+- The analysis contract/fingerprint version is `1.2.2`, so a non-forced run cannot reuse the all-fallback `1.2.1`
+  documents. Runtime repair version 7 completed with 18 chapters, 24 knowledge points, 12 suggested Q&A entries, zero
+  degraded ranges, and zero provider format-rejection dumps.
+
+## 2026-08-30 reanalysis model selector
+
+- The media-library Hermes result toolbar now places the shared Hermes `ModelCatalogMenu` beside `重新分析`. It defaults
+  to the provider/model pair saved on the media's original automatic ANALYZE job from Add Content; an original null
+  pair is displayed as `Hermes 全局模型`.
+- Users can select another provider/model or return to the global model before reanalysis. The selection is sent only
+  as that forced ANALYZE job's `analysis_provider`/`analysis_model`; it does not change Hermes global model settings.
+
+## 2026-08-30 empty cited analysis retry
+
+- A valid top-level Hermes JSON object with a summary but empty knowledge arrays previously bypassed structured retry:
+  `_generate_bundle` accepted it, then `_generate_map_bundle` immediately used transcript fallback. This caused the
+  final 41-segment chunk of the 16:17 Xiaomi O3 video (`14:47.420` through `16:12.600`) to be marked degraded after
+  one short, non-truncated model response even though llama-server remained healthy.
+- Model-facing analysis schemas now require at least one chapter, knowledge point, suggested Q&A item, and citation
+  segment ID. A provider that does not enforce the schema is still protected by a post-normalization cited-content
+  check, which sends the existing corrective second request before fallback is allowed.
+- The analysis contract/fingerprint version is `1.2.1`. Existing persisted results remain readable; reanalysis creates
+  a new version under the corrected contract.
+
+## 2026-08-29 visible Hermes fallback ranges
+
+- A map chunk that falls back after an invalid Hermes structured response now records system-authored degradation
+  metadata: `degraded=true` on retained fallback entries and a top-level `degraded_ranges` item containing the full
+  affected chunk citation, chunk index, and stable `model_invalid_response` reason. The metadata is excluded from the
+  model JSON schema so generated content cannot forge or suppress it.
+- Successful global reduce output retains all map-level degradation ranges even when it rewrites the fallback entries.
+  The summary knowledge document persists the overall flag and exact ranges; category documents retain per-entry flags.
+- The Desktop knowledge view shows an amber warning, clickable affected ranges, dedicated fallback timeline markers,
+  and badges on overlapping entries. Existing `Transcript section` / `Transcript evidence` fallback documents are
+  recognized client-side, so legacy results get best-effort warnings without reanalysis.
+- Normal boundary evidence supplementation is not treated as degradation. The analysis output contract is version
+  `1.2.0`.
+
+## 2026-08-29 duration-adaptive Hermes analysis chunks
+
+- Hermes map analysis no longer uses a fixed 48-segment batch. It derives the target from authoritative Transcript
+  timestamps: up to 5/15/30/60/120 minutes use 32/40/48/64/80 segments, and longer transcripts use 96.
+- `VKC_ANALYSIS_MAX_CHUNK_SEGMENTS` now defaults to 96 and remains a hard operator ceiling. The existing 12,000-
+  character limit independently closes a chunk early for dense subtitles, preserving bounded prompts and 64K context.
+- The adaptive strategy, effective segment limit, and character cap are included in the knowledge fingerprint so
+  results produced under fixed-48 chunking are never mistaken for adaptive-plan cache hits.
+- Existing-library projection shows representative 60-minute transcripts dropping from 30–42 map chunks to 22–32,
+  a 68-minute transcript from 22 to 15, and a 121-minute transcript from 46 to 23. Short videos retain finer batches.
+
+## 2026-08-29 per-content Hermes analysis model
+
+- “添加内容”的 faster-whisper 配置下方新增 Hermes 知识分析模型选择器，直接复用 Desktop SDK 的
+  `ModelCatalogMenu`。默认继承 Hermes 全局模型；清除覆盖值即可恢复继承。
+- 选择值以 `analysis_provider` 和 `analysis_model` 成对写入当前采集任务，并沿普通视频、本地视频、
+  直播录制后处理和自动 ANALYZE 任务传递。它不会调用全局模型切换接口，也不会改写 Hermes 配置。
+- Hermes Client 将任务级 provider/model 作为单次 OpenAI-compatible 请求覆盖发送；未选择时继续使用
+  `model=hermes-agent`，由 Gateway 解析全局默认模型。知识文档模型标识和分析指纹包含任务级选择。
+- Verification passed: 88 Video Knowledge tests, 21 Desktop Video Knowledge Vitest tests, Desktop typecheck,
+  plugin ESLint, and Ruff.
+
+## 2026-08-29 non-streaming analysis cancellation propagation
+
+- ANALYZE pause/cancel already stopped the durable Worker task, but its non-streaming Hermes HTTP request could
+  survive as an orphan: aiohttp does not automatically cancel a non-streaming handler when the client disconnects,
+  and the Gateway agent continued running in its executor thread until llama.cpp finished generating.
+- The OpenAI-compatible Gateway now monitors the request transport while a non-streaming agent turn runs. A closed
+  client connection hard-interrupts the live agent, aborts its request-local provider connection, and reaps abandoned
+  turn processes. A cancellation event also closes the race where the client disconnects while the agent is still
+  being constructed.
+- Targeted verification passed: 112 API-server tests, 14 disconnect/cancellation tests, and the combined Gateway plus
+  VKC analysis-control selection (16 tests). Runtime restart left llama.cpp idle after the previously cancelled job.
+
+## 2026-08-25 Windows first-launch install-stamp repair
+
+- Hermes Desktop 0.17.0 generated schema-v2 `install-stamp.json` files, but the packaged runtime still accepted only
+  schema v1. Fresh installs therefore discarded valid release metadata and failed before running `install.ps1` with
+  `no SOURCE_REPO_ROOT and no install stamp`.
+- The runtime now accepts schema v2 and preserves its validated `repository` field, so VKC releases bootstrap from
+  `yknife/hermes-agent` instead of silently falling back to the NousResearch upstream repository.
+- Unit coverage verifies v2 parsing and fork retention. Packaged-app and RC verification now require the exact runtime
+  schema plus a usable repository. A replacement `Hermes-0.17.0-win-x64.exe` was built and RC verification passed.
+- A second-machine install then exposed a legacy `.env` collision: a persisted `HERMES_DASHBOARD_SESSION_TOKEN`
+  overrode Desktop's fresh per-spawn token, so the backend bound successfully but readiness returned HTTP 401.
+  Desktop now atomically removes only that obsolete persisted entry before local backend launch, while the Python env
+  loader preserves a parent-injected token as the long-term defense. Other user settings and secrets remain unchanged.
+
 ## 2026-08-24 Sprint 10 Windows release candidate
 
 - Windows RC packaging reuses the single Hermes Desktop Electron Builder NSIS/MSI pipeline. The retired standalone
@@ -281,3 +379,50 @@
   67:20, versus 44:24 previously. The final transcript segment remains complete at 68:28.
 - Full verification passed with 63 VKC tests, 115 Gateway tests, Desktop typecheck/Vitest, Ruff, formatting, ESLint,
   and lock consistency.
+
+## 2026-08-29 local media and analysis-control repair
+
+- Consecutive `job.progress` events with the same stage and message are collapsed in the task event view, so local
+  file copy progress no longer renders dozens of identical `正在导入本地视频` rows. Persisted progress and Worker
+  cancellation checkpoints remain unchanged.
+- New local imports extract the first decodable frame through the FFmpeg media adapter, store it as
+  `source/thumbnail.jpg`, persist a `THUMBNAIL` asset, and use the local JPEG as `media_items.thumbnail_url`.
+  Worker startup also backfills missing covers for legacy media marked `metadata.local=true` or `metadata.live=true`.
+- The existing local one-hour media item was backfilled successfully on restart; its JPEG is 162,634 bytes and its
+  database thumbnail URL now points inside the configured Video Knowledge storage root.
+- ANALYZE pause/cancel now races model analysis against a 100 ms durable-control poll. Closing the Worker request is
+  propagated through the non-streaming Gateway handler, which hard-interrupts the Hermes Agent and reaps abandoned
+  model subprocesses instead of leaving llama-server generation on the GPU.
+- The Video Knowledge sidebar contribution uses the supported `file-media` Codicon. The analysis segment cap is now
+  configurable as `VKC_ANALYSIS_MAX_CHUNK_SEGMENTS` and defaults to 48 instead of 24; the supervisor forwards the
+  value to its Worker process.
+- The local Qwen3.5-4B llama-server was restarted with `--chat-template-kwargs
+  "{\"enable_thinking\":false}"` while retaining 65,536 context and full GPU offload. Runtime `/props` confirmed
+  the model/context, and a Chat Completions probe returned no reasoning content.
+- Verification passed: 81 Video Knowledge tests, four job-event Vitest tests, Desktop typecheck, plugin ESLint, and
+  Ruff. Hermes Desktop, Gateway, Worker, and llama-server were restarted successfully.
+
+## 2026-08-29 selected-series knowledge Q&A
+
+- The media-library `问知识库` action no longer stages an unrestricted whole-library chat. It opens a bounded
+  checkbox selector, preselects the active video, requires at least one selection, and supports up to 50 videos for
+  series-level or topic-level Q&A.
+- Fresh-chat context now carries only validated `media_ids` under `scope=selected_videos`; media titles remain UI-only
+  untrusted labels and are not inserted into the model prompt. The composer banner shows the selected count/titles.
+- The read-only `search_videos` and `search_transcript` tools accept the selected `media_ids`. Both metadata queries
+  and transcript FTS/LIKE queries apply that allowlist in SQL, so searches do not scan or return unrelated videos.
+- Single-video `问 Hermes` remains available and keeps its existing `single_video` scope and citations.
+
+## 2026-08-29 Hermes knowledge read-only tools
+
+- The Video Knowledge toolset now registers `search_knowledge` and `get_knowledge_documents` alongside the existing
+  video/transcript tools. Both query persisted `knowledge_documents` only and never enqueue or rerun analysis.
+- Queries return only the latest `READY` version for each media/document type. Failed and superseded versions are
+  excluded. Supported types are `summary`, `chapters`, `knowledge_points`, and `suggested_qa`.
+- `search_knowledge` searches individual knowledge entries, preserves their media/title/type/version metadata, and
+  emits a `video-cite` directive when the stored result contains a valid transcript citation.
+- `get_knowledge_documents` accepts one media ID or a selected `media_ids` collection, supports type filtering, and
+  returns structured document content and analysis metadata. Results are bounded to 20 documents, 12,000 characters
+  per document, and a 48,000-character aggregate budget; truncated documents are marked explicitly.
+- Fresh Video Knowledge chats are instructed to search persisted Hermes knowledge first, then use transcript tools
+  to verify citations, expand details, or fill gaps. Selected-series `media_ids` scope remains mandatory.

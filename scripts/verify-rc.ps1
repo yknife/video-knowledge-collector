@@ -19,7 +19,7 @@ $stamp = Get-Content -LiteralPath $stampPath -Raw | ConvertFrom-Json
 if ($manifest.schema_version -ne 1 -or -not $manifest.artifacts) {
     throw "RC manifest is invalid or contains no installer artifacts."
 }
-if ($stamp.schemaVersion -lt 2 -or $stamp.repository -ne $manifest.source.hermes_repository) {
+if ($stamp.schemaVersion -ne 2 -or $stamp.repository -ne $manifest.source.hermes_repository) {
     throw "Install stamp repository metadata is missing or inconsistent."
 }
 if ($stamp.commit -ne $manifest.source.hermes_commit) {
