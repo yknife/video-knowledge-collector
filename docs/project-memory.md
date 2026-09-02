@@ -1,5 +1,70 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-08-30 add-content storage-location guidance
+
+- Both the content-link and local-video modes now display the effective global media-asset storage root before the
+  source-specific fields. The location is read-only on this page and shares the same cached `/system/storage` query
+  as System Settings.
+- The notice recommends choosing a spacious disk before the first import, explains that video, thumbnails, ASR audio,
+  and Transcript files use the shared root, and provides a direct action that switches to System Settings. Storage
+  changes and verified migration remain available only from System Settings.
+
+## 2026-08-30 Desktop live-monitor cancellation latency repair
+
+- A reported `RECORD_LIVE` cancellation appeared ineffective because the Desktop request timed out after 15 seconds.
+  The persisted job did eventually transition from `WAITING_LIVE` to `CANCELLED`, and its source was disabled, so the
+  live state machine itself was working.
+- The actual bottleneck was the Desktop plugin event socket after restart: with no event cursor it replayed all 33,837
+  persisted job events in 100-event batches. The long-running monitor alone had about 1,485 events. Serial JSON sends
+  occupied the Hermes HTTP event loop for minutes, causing cancellation and ordinary reads to queue and time out.
+- The Desktop-only `/events` notification socket now snapshots the latest persisted event ID when no reconnect cursor
+  is supplied and listens only for subsequent changes. Explicit-cursor catch-up and the standalone FastAPI `/ws`
+  history-replay contract remain unchanged.
+
+## 2026-08-30 configurable media storage and verified migration
+
+- The former “ASR 设置” tab is now “系统设置”. It exposes the effective global media storage root while retaining
+  the existing faster-whisper and runtime settings on the same page.
+- Changing the root starts a background migration only after all collection/analysis jobs are terminal. The Desktop
+  shows byte/file progress across copy and SHA-256 verification, and blocks task mutations until migration finishes.
+- Migration stops the Worker, copies video, thumbnails, ASR audio, transcripts, and other relative media assets into
+  an empty target directory, verifies every file, persists the new root, restarts the Worker with that root, and only
+  then removes the old asset directory. A copy/verification/switch failure leaves the old root configured and usable;
+  an old-directory cleanup failure is reported as a warning without rolling back the successfully switched root.
+- The SQLite database remains under the Hermes profile `video-knowledge/data` directory. A regression test registers
+  a real media item and confirms its existing media ID resolves and plays from the new root after migration.
+
+## 2026-08-30 expandable media-library player
+
+- The media-library player no longer depends on Electron exposing the native HTML video fullscreen control. An
+  explicit `放大播放` action expands the existing video element over the application work area, preserving playback
+  position and play/pause state instead of mounting a second player.
+- Users can exit with the toolbar action, the backdrop, or Escape. Selecting/deleting another media item also closes
+  the expanded player so an obsolete playback surface cannot cover the library.
+
+## 2026-08-30 per-link YouTube Cookies selection
+
+- “添加内容”首次识别链接若收到稳定的 `AUTH_REQUIRED` 错误，会在链接输入框下方展开 Netscape
+  `cookies.txt` 文件选择；普通公开链接不会显示该控件。更换链接会清空旧路径，避免凭据误用于其他来源。
+- 用户选择的文件只随当前 probe 和 INGEST_VIDEO 任务传递。后端会验证文件存在、大小、UTF-8 文本及
+  Netscape 头；Worker 优先使用任务级 Cookies，未选择时仍回退到全局配置。`JobRead` 会删除
+  `cookies_file`，所以路径不会出现在任务中心或 API 任务响应中，日志也不会记录 Cookies 内容。
+- YouTube 携带 Cookies 时，probe、字幕下载和媒体下载统一增加经本机验证可用的
+  `youtube:player_client=default,web_embedded`、Node JS runtime 与 `ejs:github` remote component 参数。
+  实际探测 `06rHoEpiuYY`（首字符为数字 `0`）成功；它与此前失败的 `O6rHoEpiuYY`（字母 `O`）
+  是两个不同的视频 ID。
+
+## 2026-08-30 unavailable-video error classification
+
+- yt-dlp may append generic browser-Cookies advice to unrelated YouTube failures. The media adapter now classifies
+  an explicit `video is unavailable`/removed/region failure before authentication hints and returns the stable
+  `MEDIA_UNAVAILABLE` code instead of incorrectly reporting `AUTH_REQUIRED`.
+- Video Knowledge inline errors now unwrap the Desktop IPC and plugin API envelopes and display the safe backend
+  message rather than the raw `Error invoking remote method ... 422 ...` payload.
+- The reported YouTube ID returned `This video is unavailable` from the runtime yt-dlp and HTTP 404 from YouTube's
+  oEmbed endpoint. No `VKC_YT_DLP_COOKIES_FILE` is configured in the current development runtime, but Cookies alone
+  cannot make a deleted, inaccessible private, or region-blocked video publicly available.
+
 ## 2026-08-30 provider response-format compatibility
 
 - A 16:17 Xiaomi O3 reanalysis selected `deepseek/deepseek-v4-flash`. The provider rejected every map and reduce
