@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-12 Feishu Douyin collection
+
+- Trusted Feishu collection now accepts exact Douyin on-demand URLs, official `v.douyin.com` short links, official
+  `iesdouyin.com/share/video/...` links, and numeric discovery/featured `modal_id` links in addition to Bilibili.
+- Numeric Douyin modal links are canonicalized to `/video/{id}` before network access. Short-link redirects retain the
+  existing five-hop cap and global-DNS checks, and may not cross from Douyin to Bilibili or vice versa. The Worker also
+  verifies that yt-dlp reports the same expected platform before download.
+- Feishu jobs automatically use the per-platform Douyin cookie file configured in VKC System Settings. Anonymous live
+  probing of the reported Douyin fixture reaches the extractor and returns the expected bounded `AUTH_REQUIRED` result;
+  a current cookie export is still required when Douyin enforces login or IP risk controls. Plugin version is `0.15.0`.
+
 ## 2026-09-12 per-platform cookie settings
 
 - VKC System Settings now manages validated Netscape cookie files independently for Bilibili, Douyin, Xiaohongshu,
