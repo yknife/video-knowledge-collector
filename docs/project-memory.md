@@ -1,5 +1,13 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 three-hour Feishu video duration limit
+
+- The default Feishu on-demand video collection limit is now 10,800 seconds (three hours), replacing the original
+  1,800-second limit. The configured safety range remains 1–86,400 seconds.
+- Retrying a failed messaging ingest refreshes the job's duration limit from current runtime settings together with
+  its platform cookie configuration. Jobs rejected under the old 30-minute limit can therefore be retried after the
+  restart without resubmitting the URL. Plugin version is `0.17.2`.
+
 ## 2026-09-13 Feishu collection priority and desktop browser isolation
 
 - A Feishu direct-message session could remain blocked on an older Agent `clarify` call. A new explicit VKC video
