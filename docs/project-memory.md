@@ -1,5 +1,23 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-07 Feishu VKC stage 5
+
+- Messaging status, cancel, and the new retry tool accept an optional workflow ID. When omitted, the service resolves
+  only the most recent subscription for the trusted profile/platform/user/chat/thread context, enabling natural
+  “刚才的视频” requests without exposing authority fields to the model.
+- Subscribers may query; only the original workflow owner may cancel or retry. Cancellation still uses
+  `JobStateMachine.request_cancel`. Retry accepts only FAILED workflows, is idempotent once requeued, and never deletes
+  media or existing knowledge.
+- Revision `20260907_0010` adds a workflow terminal generation. Each real manual retry gets a distinct terminal Outbox
+  identity, while duplicate projection/reconciliation remains idempotent. Outbox snapshots preserve the prior terminal
+  status, safe code, stage, and media ID if retry begins before that notification is delivered.
+- Status results now include a bounded progress value, retry availability, and deterministic Chinese UX text. Failure
+  notifications include natural-language and explicit-ID retry instructions. Progress events remain quiet; optional
+  Feishu action cards are intentionally deferred until a token-backed second iteration.
+- Full verification passed with 181 VKC tests, 120 Gateway tests, one Windows installer test, Desktop typecheck/lint,
+  and 29 Vitest cases. The live profile migrated to 0010 and restarted with Feishu, webhook, and one VKC dispatcher
+  active. Its workflow and pending Outbox counts were zero, so deployment did not send a synthetic Feishu message.
+
 ## 2026-09-06 Feishu VKC stage 4
 
 - Hermes Gateway now starts one transport-neutral `NotificationDispatcher` for every served profile that has an
