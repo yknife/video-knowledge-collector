@@ -1,5 +1,17 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 Feishu Xiaohongshu collection
+
+- Trusted Feishu collection now accepts yt-dlp-compatible Xiaohongshu note URLs at
+  `www.xiaohongshu.com/explore/{id}` and `www.xiaohongshu.com/discovery/item/{id}`, plus official
+  `xhslink.com` share links.
+- Official share links are resolved with the existing redirect limit, per-hop allowlist and global-DNS checks. A safe
+  streaming GET fallback handles share hosts that reject or render HEAD requests, and redirects may not cross to
+  Bilibili or Douyin. Required note query values such as `xsec_token` remain intact.
+- The Worker verifies yt-dlp's final extractor and webpage URL are still Xiaohongshu before download. New and retried
+  Feishu jobs resolve the Xiaohongshu Netscape cookie file from VKC System Settings, and retry guidance uses the
+  authoritative Xiaohongshu label. Plugin version is `0.16.0`.
+
 ## 2026-09-13 messaging retry cookie refresh
 
 - Workflow `workflow_01789267866259066201_9776a91124` was correctly classified as Douyin, but its first job was created
