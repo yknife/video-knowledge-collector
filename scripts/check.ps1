@@ -32,7 +32,7 @@ uv run --project thirdparty/hermes-agent --extra dev ruff format --check thirdpa
 Assert-LastExitCode "ruff format"
 uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/video_knowledge
 Assert-LastExitCode "Video Knowledge pytest"
-uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/gateway/test_api_server.py thirdparty/hermes-agent/tests/gateway/test_api_server_multiplex_secret_scope.py thirdparty/hermes-agent/tests/gateway/test_feishu_notification_idempotency.py
+uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/gateway/test_api_server.py thirdparty/hermes-agent/tests/gateway/test_api_server_multiplex_secret_scope.py thirdparty/hermes-agent/tests/gateway/test_feishu_notification_idempotency.py thirdparty/hermes-agent/tests/gateway/test_feishu_bot_admission.py thirdparty/hermes-agent/tests/gateway/test_feishu_bot_auth_bypass.py thirdparty/hermes-agent/tests/gateway/test_turn_context.py
 Assert-LastExitCode "Hermes Gateway pytest"
 uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/test_install_ps1_ascii_only.py
 Assert-LastExitCode "Windows installer source tests"

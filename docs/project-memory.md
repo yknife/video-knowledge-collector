@@ -1,5 +1,24 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-07 Feishu VKC stage 6
+
+- Messaging collection now accepts only exact Bilibili on-demand URLs and b23 short links. The Worker validates URL
+  shape and every DNS answer before yt-dlp, validates each short-link redirect with a five-hop cap, and validates the
+  probed platform, final URL, and DNS again before download. Private, local, link-local, reserved, mixed-answer, forged
+  platform, and forged redirect targets are rejected with a stable `UNSAFE_URL` code.
+- Admission enforces profile-local user and chat daily/active-workflow quotas, the existing 30-minute/720p messaging
+  limits, and 2 GiB storage reserve both before job creation and immediately before download. Gateway bot admission,
+  ACL, trusted-origin isolation, and synthetic-user rejection are included in the full verification set.
+- Messaging PII defaults to 90-day retention and is removed only for terminal workflows whose Outbox has drained.
+  Periodic cleanup also removes only expired `app.db.*.bak` migration backups beside the active database and never
+  user media. Structured logs redact credentials, cookie arguments/paths, and signed query values, including formatted
+  exceptions. Platform/auth/rate/storage/model failures have bounded safe user guidance.
+- Full verification passed with 205 VKC tests, 144 Gateway tests, one Windows installer test, Desktop typecheck/lint,
+  and 29 Vitest cases. A fixed public Bilibili BV URL passed live DNS admission. No migration was added; schema head
+  remains 0010. Gateway and Worker restarted on the new code with Feishu/webhook connected and one dispatcher active;
+  the live database had zero workflows/pending Outbox and about 1438.7 GiB free. Messaging ingress remains default-off
+  pending stage 7 real Feishu smoke.
+
 ## 2026-09-07 Feishu VKC stage 5
 
 - Messaging status, cancel, and the new retry tool accept an optional workflow ID. When omitted, the service resolves
