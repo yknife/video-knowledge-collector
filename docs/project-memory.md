@@ -423,6 +423,23 @@
 - Transcript 属于不可信 LLM 输入；不得记录 Cookies、授权头、API key 或签名流地址。
 - 问答会话、消息、流式输出与工具事件必须继续复用 Hermes Chat Workspace；VKC 只负责
   受限上下文、只读检索工具和视频引用导航。
+
+## 2026-09-06 飞书 VKC 闭环阶段 1
+
+- Gateway 现在为每个已准入 turn 绑定只读 `ToolInvocationContext`，可信 profile/session/platform/chat/thread/
+  message/user/authorization 不进入模型参数或 prompt，并能跨工具线程传播且不会在并发 turn 之间串值。
+- Video Knowledge 插件新增 Feishu 专属 `video_knowledge_messaging` 工具集，包含 `collect_video`、
+  `get_collection_status` 和 `cancel_collection`。平台工具集负责会话级 Schema 隔离，handler 再次执行可信上下文
+  与 profile 校验；没有使用会被进程级 TTL 缓存的 `check_fn` 做会话授权。
+- revision `20260906_0007` 新增最小 `collection_requests` 受理回执。同一 platform/chat/message 在原子事务内
+  复用稳定 workflow/job；采集强制自动分析并立即返回，状态和取消按原请求者隔离，取消继续走
+  `JobStateMachine`。
+- 消息配额、最大清晰度和最大视频时长已执行。Worker 在下载前根据 probe 拒绝未知或超限时长；Desktop
+  任务没有消息时长字段，因此原采集行为不变。
+- 阶段 1 验证通过：155 项 VKC 测试、110 项 Feishu/网关上下文测试、38 项聚焦测试；migration 已从
+  `20260822_0006` 实际升级到 `20260906_0007` 并验证新表和索引。终态 Outbox、原会话主动推送、多订阅者
+  workflow 复用和明确的 ingest/analysis 父子关联保留到阶段 2–4。完整 `scripts/check.ps1` 也已通过：
+  Gateway API 118 项、Windows 安装脚本 1 项、Desktop typecheck/ESLint 和 Vitest 29 项均成功。
 ## 2026-08-23 live media thumbnail generation
 
 - Live finalization now asks the FFmpeg media adapter for the first decodable video frame, scales it to at most

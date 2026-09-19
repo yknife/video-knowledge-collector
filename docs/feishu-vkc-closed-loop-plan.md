@@ -195,6 +195,9 @@ FEISHU_REQUIRE_MENTION=true
 
 ### 阶段 1：可信工具调用上下文与采集工具
 
+状态：2026-09-06 已完成，见 [阶段 1 可信上下文与采集工具验收记录](feishu-vkc-stage1.md)。阶段 1
+使用最小持久化受理回执保证入站消息幂等；完整 workflow、订阅、父子任务关联和 Outbox 仍属于阶段 2–4。
+
 工作项：
 
 - 在 Hermes 工具调用链引入只读 `ToolInvocationContext`，至少包含 profile、session ID、platform、
