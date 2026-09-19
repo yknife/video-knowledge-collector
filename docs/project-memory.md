@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-12 per-platform cookie settings
+
+- VKC System Settings now manages validated Netscape cookie files independently for Bilibili, Douyin, Xiaohongshu,
+  YouTube, Vimeo, and Twitch through the native desktop file picker. Only the local path is persisted; cookie contents
+  remain outside API job responses, logs, notifications, and model context.
+- Desktop probes, REST/controller ingestion, and trusted messaging collection resolve the cookie file from the URL
+  platform. A file selected for one Add Content request still overrides the system default, and each queued job keeps
+  the resolved path it was created with.
+- Platform cookie settings use the existing `app_settings` table, so no schema migration is required. Plugin version is
+  `0.14.0`.
+
 ## 2026-09-09 Douyin featured-link probing
 
 - Desktop probing now canonicalizes numeric Douyin discovery/featured overlay URLs such as
