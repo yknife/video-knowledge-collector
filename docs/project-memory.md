@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-17 Douyin mobile live cookie compatibility fix
+
+- Failed live job `job_01789658238867563900_eb90aad8e6` reproduced with configured Douyin cookies:
+  the mobile reflow API returned no usable room, while the identical URL worked anonymously.
+  The original live smoke test had not exercised this user's cookie configuration.
+- Reflow parsing now retries once without cookies for malformed/empty room responses; valid offline
+  responses do not trigger fallback. Saved cookies are unchanged. A failed fallback retains a specific
+  sanitized error instead of the generic parser failure. No response bodies or credentials are logged.
+- The failed task URL with the configured cookie file now produced a real 5.294-second recording.
+  Adapter and live pipeline regression tests: 66 passed; targeted lint/format passed.
+
 ## 2026-09-17 Feishu Douyin live collection
 
 - Feishu accepts `live.douyin.com/{room}` and official `v.douyin.com` shares. Short links are
