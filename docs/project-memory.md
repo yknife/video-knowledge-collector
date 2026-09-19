@@ -1,5 +1,37 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-20 Task cards contain long URLs
+
+- Task-center columns and Radix ScrollArea content can now shrink to the available width instead
+  of inheriting a long URL's intrinsic width. Source labels and error details wrap at arbitrary
+  URL boundaries, while progress remains visible at the card's right edge.
+- The task header and event column use flex sizing rather than fixed height subtraction, so wrapped
+  source labels do not create a horizontal page overflow or clip the scrollable task list.
+- Desktop TypeScript checks, plugin lint and the 28 focused Video Knowledge tests pass. The running
+  development desktop picked up the change through Vite HMR and was inspected at its normal size.
+
+## 2026-09-19 Feishu Bilibili live short-link routing
+
+- Collection admission resolved only Xiaohongshu, Douyin and Weibo short links before
+  classifying the job. A `b23.tv` live share therefore became INGEST_VIDEO and failed
+  when probing discovered a live stream. Admission now resolves every supported short
+  link through MessagingUrlGuard before selecting RECORD_LIVE or INGEST_VIDEO.
+- Existing message replay still bypasses network resolution. Regression tests cover
+  Bilibili live/video redirects and replay; unrelated notification tests use direct
+  video fixtures to avoid external network dependencies.
+- The reported short link was verified to resolve to `live.bilibili.com/544843`.
+  Failed job `job_01789824587550269500_b813b3d51c` is retained for audit. Replacement
+  workflow `workflow_01789824909047230600_56b4060b8c` uses the original trusted Feishu
+  origin and a separate deterministic repair receipt key. Its RECORD_LIVE job reached
+  RECORDING with increasing progress; hourly segmentation and analysis remain enabled.
+- Gateway was restarted using the repository .venv Python; health is OK and the Feishu
+  WebSocket reconnected. When restarting on Windows, use `.venv/Scripts/python.exe`,
+  not the underlying interpreter path reported by a child process (which loses venv
+  dependencies). Full-hour completion and final result delivery remain pending.
+- Validation: `scripts/check.ps1` passed (323 VKC, 148 gateway, 78 Feishu,
+  1 installer and 30 desktop tests, plus lint, formatting and desktop type checks).
+  The replacement recording had written a 24 MB segment at the final runtime check.
+
 ## 2026-09-19 Weibo thumbnail localization
 
 - Weibo probe metadata supplied a valid `sinaimg.cn` thumbnail URL, but that host returned HTTP 403
