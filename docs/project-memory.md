@@ -1,5 +1,22 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-16 Feishu Xiaohongshu live collection
+
+- Messaging accepts numeric Xiaohongshu `/livestream/{id}`, `/hina/livestream/{id}`, and
+  `/livestream/{route}/{id}` room URLs. Official xhslink short links are resolved by MessagingUrlGuard before the
+  admission transaction to distinguish live rooms from on-demand notes; replayed messages reuse existing receipts
+  without resolving expired links. Cross-platform redirects and non-global DNS remain rejected.
+- Xiaohongshu uses StreamGet's `RedNoteLiveStream.fetch_app_stream_data` rather than the generic web method.
+  Configured platform cookies are attached to its mobile request headers; Netscape expiry zero is treated as a
+  session cookie without accepting actually expired cookies. Live retries also refresh platform cookies.
+- Hourly splitting, unlimited total capture, cancellation, per-part analysis and Feishu outbox delivery reuse the
+  Bilibili pipeline with platform-correct labels. Version `0.19.0`; no database migration.
+- User-provided `https://xhslink.cn/o/5iyv4JKpyTf` was resolved over the real network to a Xiaohongshu note, not a
+  live room. The subsequently supplied `https://xhslink.com/o/7rVauHiUZnT` resolved to a live room;
+  real StreamGet probing and FFmpeg recording succeeded (5.454 seconds, 1,602,977 bytes), without configured
+  Xiaohongshu cookies. Signed URLs and tokens were not logged. Full checks passed (275 VKC, 148 Gateway,
+  78 Feishu, 1 install-source, 30 desktop tests). A full hourly recording and Feishu delivery were not exercised.
+
 ## 2026-09-13 Feishu new-user pairing with an owner allowlist
 
 - A nonempty `FEISHU_ALLOWED_USERS` caused the Feishu adapter to drop unknown private senders before Gateway could
