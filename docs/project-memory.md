@@ -1,5 +1,13 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 unlimited messaging duration
+
+- `VKC_MESSAGING_MAX_VIDEO_DURATION_SECONDS=0` is now the default and disables the on-demand duration check,
+  including for unknown-duration videos. URL, storage, and admission quota checks remain independent.
+- Live recording uses `recording_remaining_seconds=0` for unlimited hourly continuation. Every part remains capped
+  at one hour; recording stops on stream end or cancellation. Regression tests exercise continuation beyond three
+  hours and cancellation of the fifth part. Plugin version is `0.18.1`.
+
 ## 2026-09-13 Feishu Bilibili hourly live recording
 
 - Feishu accepts numeric `https://live.bilibili.com/{room_id}` room URLs through the existing trusted collection

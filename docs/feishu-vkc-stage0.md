@@ -33,7 +33,7 @@ URL 契约目前只做词法校验：HTTP(S)、标准端口、无用户凭据，
 | `VKC_MESSAGING_ALLOWED_PLATFORMS` | `["feishu"]` | JSON 数组；空数组拒绝全部，目前只允许 feishu |
 | `VKC_MESSAGING_MAX_ACTIVE_PER_USER` | `1` | 1–10，按 profile/user 计算 |
 | `VKC_MESSAGING_MAX_SUBMISSIONS_PER_USER_PER_DAY` | `10` | 1–1000；UTC 自然日，幂等重放不重复计数 |
-| `VKC_MESSAGING_MAX_VIDEO_DURATION_SECONDS` | `10800` | 1–86400；未知时长不能通过消息准入 |
+| `VKC_MESSAGING_MAX_VIDEO_DURATION_SECONDS` | `0` | 0 表示不限时长；正数 1–86400 表示启用上限 |
 | `VKC_MESSAGING_MAX_VIDEO_HEIGHT` | `720` | 360 / 480 / 720 / 1080 |
 
 准备或修改配置后需重启对应 profile 的 Hermes。关闭入口不应停止现有 Desktop 任务，未来也不能中断
