@@ -25,6 +25,7 @@ if (-not (Test-Path -LiteralPath $hermesNodeModules)) {
 $hermesRoot = Join-Path $repoRoot "thirdparty\hermes-agent"
 $env:HERMES_DESKTOP_PYTHON = Join-Path $hermesRoot ".venv\Scripts\python.exe"
 $env:HERMES_DESKTOP_HERMES_ROOT = $hermesRoot
+$env:HERMES_DESKTOP_CDP_PORT = "off"
 $env:PYTHONPATH = $hermesRoot
 $env:API_SERVER_ENABLED = "true"
 $env:API_SERVER_HOST = "127.0.0.1"

@@ -1,5 +1,17 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 Feishu collection priority and desktop browser isolation
+
+- A Feishu direct-message session could remain blocked on an older Agent `clarify` call. A new explicit VKC video
+  request was then interpreted as conversational input, allowing the Agent to invoke browser tools before collection
+  admission. Explicit supported video requests now enter the durable VKC admission path before busy-session,
+  steer/queue, pending-update, or clarify routing.
+- The source development launcher previously left Electron's renderer DevTools port enabled. Agent browser tooling
+  could attach to that port and navigate the Hermes desktop renderer to a media website. `scripts/dev.ps1` now starts
+  the VKC desktop with `HERMES_DESKTOP_CDP_PORT=off`, isolating the application window from browser automation.
+- A quota rejection remains an admission result and is returned immediately; it no longer falls through to Agent
+  browsing. Plugin version is `0.17.1`.
+
 ## 2026-09-13 configurable Feishu collection quotas
 
 - VKC System Settings now exposes a persisted Feishu collection quota switch and four bounded limits: active workflows
