@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 configurable Feishu collection quotas
+
+- VKC System Settings now exposes a persisted Feishu collection quota switch and four bounded limits: active workflows
+  per user/chat and daily submissions per user/chat. Defaults continue to come from the existing `VKC_MESSAGING_*`
+  environment settings until an operator saves UI values.
+- Messaging admission reads `messaging.quotas` from `app_settings` in the same transaction as quota enforcement, so UI
+  changes take effect on the next Feishu submission without restarting Gateway or the Worker. Disabling the switch
+  bypasses quota counting while leaving the trusted-user gate, URL policy, storage reserve, and media limits intact.
+- Rejections now identify the exact exceeded dimension and current/limit values instead of returning only the generic
+  `Messaging collection quota exceeded` message. Plugin version is `0.17.0`.
+
 ## 2026-09-13 Xiaohongshu CN short-link correction
 
 - Feishu share text uses the official `xhslink.cn/o/...` domain, while the initial Xiaohongshu messaging allowlist only
