@@ -1,5 +1,38 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-06 Feishu VKC stage 0
+
+- Added unregistered collect/status/cancel argument contracts, default-off messaging admission settings and bounded
+  operator limits; Desktop ingest is unchanged. Manifest now matches all five registered read-only tools.
+- Recorded command semantics, fixed Bilibili fixture, simulated Feishu adapter coverage and baseline checks in
+  `docs/feishu-vkc-stage0.md`. Live metadata probe returned RATE_LIMITED; no real Feishu message was sent.
+- Feishu tests now use a temporary profile even when clearing environment variables, and the direct DNS rebinding
+  test excludes Windows registry proxies. All 76 Feishu cases pass; 37 new contract cases and Desktop 27 tests pass.
+- Stage 1 remains required to register the new tools and carry trusted origin/authorization through dispatch.
+
+## 2026-09-05 Ark reasoning compatibility repair verification
+
+- After JSON format retry was repaired, GLM-5.3 also rejected `reasoning_effort=none`. Gateway now exposes the
+  explicit capability rejection and VKC performs one bounded retry with low reasoning effort, retaining JSON mode,
+  output limits and local validation. The backend was restarted and the requested video was reanalyzed.
+- Job `job_01788587898841964100_50797dbac6` completed successfully. Version 6 has zero degraded ranges, replacing
+  the all-fallback version 5. The combined Gateway/VKC tests passed (227 tests at that point).
+
+## 2026-09-05 structured-format retry with provider errors in reply text
+
+- The latest GLM-5.3 analysis of the Hermes Agent tutorial produced eight fallback ranges. All 18 map/reduce
+  attempts were rejected with HTTP 400 because the configured Ark Agent Plan endpoint does not support
+  `response_format.type=json_schema` for this model.
+- The Agent returned the provider diagnostic in both `error` and a non-empty `final_response`. Gateway previously
+  emitted `response_format_unsupported` only when `final_response` was empty, so it returned HTTP 200 and VKC
+  attempted to parse the diagnostic as JSON instead of activating its existing `json_object` compatibility retry.
+- Failed/incomplete structured requests now emit the capability error even when reply text contains a diagnostic.
+  Ordinary partial-output behavior is preserved. No API schema or persistence migration is required.
+- Verification: 125 Gateway/client tests passed, including empty/non-empty diagnostic regression cases and a real
+  loopback HTTP test from HermesClient through Gateway that verifies 502 -> json_object retry -> 200. A direct
+  request to the configured Ark GLM-5.3 endpoint also returned valid JSON using `json_object`.
+- The running Hermes backend must reload this change; existing fallback documents require forced reanalysis.
+
 ## 2026-08-30 add-content storage-location guidance
 
 - Both the content-link and local-video modes now display the effective global media-asset storage root before the

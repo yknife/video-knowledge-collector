@@ -2,6 +2,9 @@
 
 基础路径：`/api/video-knowledge/v1`。字段使用 `snake_case`，时间使用带时区 ISO 8601。
 
+飞书消息采集的阶段 0 参数契约和运维配置见 [阶段 0 记录](feishu-vkc-stage0.md)。该阶段没有新增 REST
+端点或注册采集工具，现有 Desktop API 不受默认关闭的消息采集开关影响。
+
 ## `GET /system/health`
 
 返回数据库与受监管 Worker 健康状态、版本和时间。
