@@ -1,5 +1,18 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-08 Feishu terminal notification timeline coverage
+
+- Workflow `workflow_01788826461635535800_9f81878d00` downloaded the complete 21:58 media and produced 849
+  transcript segments through 21:54. Its persisted knowledge was also complete: 18 chapters through 21:30, 24 points
+  through 21:51, and 12 Q&A items through 21:43.
+- The apparent four-minute analysis was a notification rendering defect. The renderer selected only the first 5
+  chronological chapters, first 5 points, and first 3 Q&A items, and truncated the summary at 900 characters. It now
+  emits the complete bounded KnowledgeService result (18/24/12 and an 8,000-character summary), relying on the existing
+  stable multipart packer when needed.
+- A regression requires the summary ending and final 21-minute citations to survive rendering. The affected persisted
+  result renders in one 5,378-character Feishu-safe part with final chapter, point, and Q&A ranges present; no media,
+  transcript, or model reanalysis is needed.
+
 ## 2026-09-07 Feishu VKC stage 7
 
 - The live profile was backed up with SQLite online backup and SHA-256 manifests, migrated explicitly to schema head
