@@ -1,5 +1,14 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-09 Douyin featured-link probing
+
+- Desktop probing now canonicalizes numeric Douyin discovery/featured overlay URLs such as
+  `douyin.com/jingxuan?modal_id=...` to the stable `/video/{id}` work URL before invoking yt-dlp. This prevents a
+  supported Douyin video from being reported as a generic media-tool failure solely because it was copied from the
+  featured feed.
+- A live probe of the reported URL now reaches the Douyin extractor and returns the bounded `AUTH_REQUIRED` guidance
+  when no fresh Netscape cookie export is selected. Plugin version is `0.13.1`.
+
 ## 2026-09-09 concise model-generated Feishu results
 
 - Full knowledge remains persisted for Desktop VKC, while every new analysis now makes one additional Hermes structured
