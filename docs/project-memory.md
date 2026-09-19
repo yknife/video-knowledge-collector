@@ -1,5 +1,15 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 Xiaohongshu CN short-link correction
+
+- Feishu share text uses the official `xhslink.cn/o/...` domain, while the initial Xiaohongshu messaging allowlist only
+  included `xhslink.com`. The rejected tool input caused Hermes to fall back to generic terminal and browser tools,
+  which produced unnecessary visible steps and loaded Xiaohongshu into the desktop browser view.
+- `xhslink.cn` is now classified as Xiaohongshu throughout messaging admission and source normalization. Its official
+  short-link endpoint may return 404 to HEAD while GET still redirects, so the guarded resolver uses a streaming GET
+  fallback for Xiaohongshu HEAD 404/410 responses. Every redirect target still passes platform, URL-shape, hop-count,
+  and global-DNS checks before yt-dlp runs. Plugin version is `0.16.1`.
+
 ## 2026-09-13 Feishu Xiaohongshu collection
 
 - Trusted Feishu collection now accepts yt-dlp-compatible Xiaohongshu note URLs at
