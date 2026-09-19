@@ -440,6 +440,22 @@
   `20260822_0006` 实际升级到 `20260906_0007` 并验证新表和索引。终态 Outbox、原会话主动推送、多订阅者
   workflow 复用和明确的 ingest/analysis 父子关联保留到阶段 2–4。完整 `scripts/check.ps1` 也已通过：
   Gateway API 118 项、Windows 安装脚本 1 项、Desktop typecheck/ESLint 和 Vitest 29 项均成功。
+
+## 2026-09-06 飞书 VKC 闭环阶段 2
+
+- revision `20260906_0008` 新增 `collection_workflows`、`workflow_subscriptions`、`notification_outbox`，以及
+  Job 的非敏感 `workflow_id`/`parent_job_id`。旧 `collection_requests` 会迁移为 owner subscription 并恢复
+  已有 ingest/analysis 关联；升级和回滚均已实际验证。
+- 消息采集按入站消息幂等，并让不同用户对同一活动 Source 共享 workflow/job、保留独立订阅。首个订阅者是
+  取消 owner；后来订阅者不能中断共享任务。READY 知识直接生成完成态 workflow 和稳定 PENDING Outbox，
+  不重新下载或分析。
+- `JobStateMachine` 在状态事务中同步 workflow；analysis 子任务原子创建或复用，并传播 workflow/父任务。
+  ingest 成功到 analysis 成功之间保持 `ANALYZING`，失败、取消、重试和进程重启后的关联均可恢复。
+- Windows 的 `time_ns()` 可能在同一时钟刻度返回相同值，旧 ID 的随机后缀会让事件游标字典序偶发倒退。
+  `new_id` 现在用锁保护进程内严格递增的时间前缀；游标顺序测试连续 10 次通过。
+- 完整 `scripts/check.ps1` 通过：160 项 VKC、118 项 Gateway API、1 项 Windows 安装测试、Desktop
+  typecheck/ESLint 和 29 项 Vitest 均成功。通用终态 projector、Outbox 租约/退避/reconciliation 与实际
+  飞书投递仍属于阶段 3–4。
 ## 2026-08-23 live media thumbnail generation
 
 - Live finalization now asks the FFmpeg media adapter for the first decodable video frame, scales it to at most

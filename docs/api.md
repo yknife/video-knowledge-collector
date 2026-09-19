@@ -2,8 +2,10 @@
 
 基础路径：`/api/video-knowledge/v1`。字段使用 `snake_case`，时间使用带时区 ISO 8601。
 
-飞书消息采集的阶段 0 参数契约和运维配置见 [阶段 0 记录](feishu-vkc-stage0.md)。该阶段没有新增 REST
-端点或注册采集工具，现有 Desktop API 不受默认关闭的消息采集开关影响。
+飞书消息采集的参数契约和运维配置见 [阶段 0 记录](feishu-vkc-stage0.md)，可信上下文与工具见
+[阶段 1 记录](feishu-vkc-stage1.md)，持久化 workflow/订阅/任务关联见
+[阶段 2 记录](feishu-vkc-stage2.md)。消息采集不新增 REST 端点；现有 Desktop API 不受默认关闭的消息
+采集开关影响。
 
 ## `GET /system/health`
 
@@ -25,6 +27,8 @@ ffprobe。响应不包含可执行文件完整路径。
 - `POST /sources/live`：创建直播监控/录制任务；任务级分析模型选择会随录制后的处理任务继续传递。
 - `GET /jobs?status=RUNNING&limit=50`：获取权威任务快照。
 - `GET /jobs/{id}`：获取单个任务。
+- Job 响应包含非敏感的 `workflow_id` 和 `parent_job_id`；消息平台、会话、聊天、线程、消息和用户目标只保存在
+  内部 subscription 表，不进入 Job 输入或公开 Job 响应。
 - `GET /jobs/{id}/events`：获取持久化状态和进度事件。
 - `POST /jobs/{id}/cancel`：排队任务立即取消，运行任务设置协作取消标记。
 - `POST /jobs/{id}/pause`、`resume`、`retry`：严格按状态机执行。

@@ -224,6 +224,9 @@ Schema 层被拒绝或完全不可见。
 
 ### 阶段 2：持久化 workflow、订阅和任务关联
 
+状态：2026-09-06 已完成，见 [阶段 2 workflow 与订阅验收记录](feishu-vkc-stage2.md)。本阶段已建立
+Outbox 持久化契约并为 READY 缓存命中写入即时终态通知；通用终态 projector、租约领取和实际投递属于阶段 3–4。
+
 工作项：
 
 - 新增 Alembic migration 和模型：
