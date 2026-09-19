@@ -1,5 +1,20 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 Feishu Bilibili hourly live recording
+
+- Feishu accepts numeric `https://live.bilibili.com/{room_id}` room URLs through the existing trusted collection
+  tools and Gateway fast admission, including bare room links. Other live platforms and live short-link redirects
+  are not part of this release. Existing video-link behavior remains available.
+- Each live submission creates an isolated recording chain. The recording unit is 3,600 seconds; a full part queues
+  the next recording with higher priority than transcription. Each part has its own ingest/analysis workflow and
+  trusted Feishu subscription. Automatic parts do not consume additional daily submission quota.
+- Total recording retains the configured three-hour limit. Stream end saves and analyzes a short final part; an
+  offline room returns a bounded unavailable result rather than entering permanent monitoring. Cancelling the latest
+  recording prevents its continuation. Bilibili system cookies are passed privately to StreamGet when configured.
+- Room and stream DNS are checked before recording. Notifications use the existing persisted outbox. No DB migration
+  is required. Plugin version is `0.18.0`. Validation uses deterministic recording fixtures; real one-hour live
+  capture and Feishu result delivery still require a user-submitted active room.
+
 ## 2026-09-13 three-hour Feishu video duration limit
 
 - The default Feishu on-demand video collection limit is now 10,800 seconds (three hours), replacing the original
