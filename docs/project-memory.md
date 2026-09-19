@@ -1,5 +1,17 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-09 concise model-generated Feishu results
+
+- Full knowledge remains persisted for Desktop VKC, while every new analysis now makes one additional Hermes structured
+  request over the complete validated bundle and stores a 600-character-bounded `notification_summary` in the summary
+  document. The prompt requires a 300–600 Chinese-character synthesis spanning the beginning, middle, and end.
+- Feishu terminal rendering sends only title, author, duration, the model digest, authoritative knowledge timeline, and
+  trace IDs. Chapters, knowledge points, and suggested Q&A remain available in Desktop instead of expanding the chat
+  notification. If digest generation fails, analysis still succeeds and the renderer uses a 900-character safe fallback.
+- Notification summarization is a distinct progress step. Analysis prompt/fingerprint version is `1.3.0`, and plugin
+  version is `0.13.0`. The previously affected 21:58 video was summarized directly from its complete 18/24/12 result;
+  the generated 713-character digest was persisted as summary version 2 for short re-delivery.
+
 ## 2026-09-08 Feishu terminal notification timeline coverage
 
 - Workflow `workflow_01788826461635535800_9f81878d00` downloaded the complete 21:58 media and produced 849
