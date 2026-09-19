@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 Feishu new-user pairing with an owner allowlist
+
+- A nonempty `FEISHU_ALLOWED_USERS` caused the Feishu adapter to drop unknown private senders before Gateway could
+  offer pairing. Drops were DEBUG-only, so the normal log contained no inbound entry for these users.
+- The adapter now honors explicit `platforms.feishu.extra.unauthorized_dm_behavior: pair` and forwards private
+  messages to Gateway authorization even with an existing owner allowlist. Unapproved users cannot run the Agent;
+  pairing approval remains required. Group and bot admission retain their existing checks. Rejection reasons are
+  logged at INFO without message contents. Local profile config now explicitly enables pairing and has a backup.
+- Feishu admission, authorization, and adapter regression tests: 95 passed. No unsolicited pairing message is sent;
+  a new inbound private message triggers the normal pairing handshake.
+
 ## 2026-09-13 unlimited messaging duration
 
 - `VKC_MESSAGING_MAX_VIDEO_DURATION_SECONDS=0` is now the default and disables the on-demand duration check,
