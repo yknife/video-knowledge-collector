@@ -1,5 +1,17 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-19 Weibo thumbnail localization
+
+- Weibo probe metadata supplied a valid `sinaimg.cn` thumbnail URL, but that host returned HTTP 403
+  unless the request included `Referer: https://weibo.com/`. Electron image elements cannot safely
+  attach this platform-specific header, so the library displayed a broken image.
+- New on-demand ingests now extract a JPEG thumbnail from the already downloaded, validated video
+  for every platform and persist it as a local THUMBNAIL asset. Desktop uses the existing
+  `hermes-media://` protocol for these files and no longer depends on expiring or hotlink-protected
+  image URLs.
+- Worker startup backfill also replaces legacy remote Weibo thumbnail URLs with locally extracted
+  files. Plugin version `0.21.2`; the ingest regression test asserts the saved local thumbnail.
+
 ## 2026-09-19 analysis retry progress and one-slot compaction fix
 
 - Job `job_01789798780977734200_4bf049ba65` first failed at 81.9% with `division by zero` while
