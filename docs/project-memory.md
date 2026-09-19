@@ -1,5 +1,22 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-07 Feishu VKC stage 7
+
+- The live profile was backed up with SQLite online backup and SHA-256 manifests, migrated explicitly to schema head
+  `20260907_0010`, and released with messaging enabled for one verified Feishu user. Allow-all remains false and group
+  admission remains allowlist-only.
+- Real DM, group mention, and group-topic requests created trusted subscriptions. Cached success, bounded Bilibili 412
+  failure, terminal delivery, retry delivery, and pending-Outbox recovery after Gateway restart all reached Feishu;
+  the final Outbox backlog is zero.
+- Topic events now keep their immutable inbound message ID separate from the topic reply anchor. This prevents a topic
+  collection from reusing the top-level group's idempotency key while preserving delivery to the original topic.
+- Explicit Chinese collection intent containing exactly one allowed Bilibili URL is persisted before any model round
+  trip. Idempotent replays of the real group and topic events completed persistence plus Feishu API delivery in 966 ms
+  and 646 ms, reused their expected workflows, and created no duplicate tasks.
+- Full verification includes the complete Feishu adapter suite. The remaining operational limitation is external:
+  anonymous Bilibili probes return 412 until the operator configures a lawful cookies export; Hermes reports this as a
+  bounded, redacted `RATE_LIMITED` failure rather than falling back silently.
+
 ## 2026-09-07 Feishu VKC stage 6
 
 - Messaging collection now accepts only exact Bilibili on-demand URLs and b23 short links. The Worker validates URL

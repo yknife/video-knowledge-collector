@@ -17,6 +17,21 @@
 这是平台风控，不是 Hermes 模型故障。合法导出 Netscape Cookies，配置
 `VKC_YT_DLP_COOKIES_FILE`，不要把 Cookies 文件、内容或路径提交到仓库。
 
+飞书中的对应任务会经过有界重试，然后返回安全的 `RATE_LIMITED` 提示。不要关闭 Worker 或删除任务；配置合法
+Cookies 并重启后，白名单用户可以发送“重试刚才的视频任务”。
+
+## 飞书视频链接没有被受理
+
+依次确认 Feishu adapter 已连接、发送者位于 `FEISHU_ALLOWED_USERS`、群消息已经 @机器人，并且
+`VKC_MESSAGING_INGEST_ENABLED=true`。入口仍只接受 B 站点播 URL；短链重定向到其他域名、私网 DNS、超长视频、
+配额耗尽或存储余量不足都会拒绝。不要设置 `FEISHU_ALLOW_ALL_USERS=true` 来绕过排查。
+
+## 飞书已受理但没有终态结果
+
+保持 Gateway 和 Worker 运行。检查日志中 Feishu 连接状态与 `Video Knowledge notification dispatchers active: 1`，
+并检查 Outbox 是否处于 `PENDING`、`RETRY` 或 `DEAD`。Gateway 重启后会自动续投；不要删除 Outbox、workflow、
+媒体或 Transcript。日志和截图在提交前仍需检查是否包含个人聊天标识。
+
 ## ASR 使用 CPU 或模型下载慢
 
 先用 `small + cpu + int8` 完成闭环。CUDA 模式需要兼容 NVIDIA 驱动；Hermes venv 会携带所需

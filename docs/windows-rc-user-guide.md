@@ -25,6 +25,19 @@
 首次模型或 CUDA runtime 下载可能超过 15 分钟；15 分钟验收基线使用已有字幕的视频或 CPU small
 模型，并要求网络可访问 GitHub、Python 包源和视频平台。
 
+## 飞书视频知识闭环
+
+管理员需要先配置 Feishu/Lark 应用、消息事件和 `FEISHU_ALLOWED_USERS`，保持
+`FEISHU_ALLOW_ALL_USERS=false`，再设置 `VKC_MESSAGING_INGEST_ENABLED=true` 并重启 Hermes。私聊可直接发送：
+
+```text
+采集并分析这个视频：https://www.bilibili.com/video/BV...
+```
+
+群聊必须由白名单用户 @机器人；群话题内发送时，受理和终态结果都会回复原话题。受理回复包含 workflow ID，
+长任务无需保持飞书窗口打开。可以继续发送“刚才的视频处理到哪里了”“取消刚才的视频任务”或
+“重试刚才的视频任务”。当前只接受 B 站普通点播和 b23.tv 短链，默认最长 30 分钟、最高 720p。
+
 ## 升级与数据保留
 
 直接运行新版安装包或使用 Hermes 更新入口。代码和 Desktop 会更新，以下用户数据保留：

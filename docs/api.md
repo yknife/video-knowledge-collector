@@ -7,6 +7,18 @@
 [阶段 2 记录](feishu-vkc-stage2.md)。消息采集不新增 REST 端点；现有 Desktop API 不受默认关闭的消息
 采集开关影响。
 
+消息写入工具只在受信任的飞书 invocation context 中注册。生产启用前必须同时满足：
+
+- `FEISHU_ALLOWED_USERS` 只包含获准用户，且 `FEISHU_ALLOW_ALL_USERS=false`；
+- `VKC_MESSAGING_INGEST_ENABLED=true`，允许平台保持默认的 `feishu`；
+- VKC 数据库已迁移到 head，Worker、Feishu adapter 和 NotificationDispatcher 均健康；
+- 存储余量、单用户和单聊天配额满足要求。
+
+`collect_video` 只接受一个 B 站点播 URL。成功受理返回 `workflow_id`、权威状态、是否复用和是否命中缓存；
+`get_collection_status`、`cancel_collection`、`retry_collection` 可省略 ID 并解析当前可信会话最近任务。终态结果由
+Outbox 异步回复原消息/话题。常见安全错误码包括 `UNSAFE_URL`、`RATE_LIMITED`、`AUTH_REQUIRED`、
+`MEDIA_UNAVAILABLE`、`STORAGE_LIMIT` 和 Hermes/分析错误；响应不会包含 Cookies、密钥、路径或原始命令输出。
+
 ## `GET /system/health`
 
 返回数据库与受监管 Worker 健康状态、版本和时间。
