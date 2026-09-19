@@ -12,7 +12,8 @@ if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
     throw "npm was not found. Install Node.js 22.22 or newer."
 }
 
-uv sync --project ".\thirdparty\hermes-agent" --extra dev
+# Feishu is part of VKC's supported runtime. Preserve other user-installed extras.
+uv sync --project ".\thirdparty\hermes-agent" --extra dev --extra feishu --inexact
 if ($LASTEXITCODE -ne 0) { throw "Hermes Python dependency sync failed: $LASTEXITCODE" }
 $hermesNodeModules = Join-Path $repoRoot "thirdparty\hermes-agent\node_modules"
 if (-not (Test-Path -LiteralPath $hermesNodeModules)) {

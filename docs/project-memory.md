@@ -1,5 +1,31 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-19 Feishu Weibo video and live collection
+
+- Desktop and Feishu now recognize Weibo on-demand posts, mobile status/detail pages, Weibo TV
+  video pages, `t.cn` official shares, `/l/wblive/.../show/{id}` live rooms and numeric `/u/{id}`
+  live profiles. Short links resolve before admission and must remain on an approved Weibo shape.
+- Weibo on-demand collection uses yt-dlp. Live collection uses StreamGet's `WeiboLiveStream` and
+  reuses hourly splitting, unlimited total recording, per-part transcription, Hermes analysis and
+  Feishu outbox delivery. Platform labels and retry messages identify Weibo correctly.
+- System settings expose a Weibo Netscape Cookies file. The same selected file is passed privately
+  to on-demand and live adapters and refreshed on retry. No database migration is required.
+- Plugin version `0.21.0`. Automated coverage includes URL admission/rejection, redirect platform
+  binding, Cookie selection, real StreamGet parser behavior, offline/online status and hourly live
+  workflow behavior. A user-supplied active Weibo live link has not yet been recorded end to end.
+
+## 2026-09-19 Feishu runtime dependency preservation
+
+- Gateway was running but skipped Feishu on 2026-09-18 restart because `lark-oapi` and `qrcode`
+  were absent and automatic installation failed. `scripts/dev.ps1` previously used exact
+  `uv sync --extra dev`, which can remove separately installed Feishu dependencies.
+- The development launcher now explicitly selects `--extra feishu` and uses `--inexact` to retain
+  other installed optional integrations. Existing `uv run` verification commands are inexact by default.
+- Restored lark-oapi 1.6.8 and qrcode 7.4.2 with their dependencies; imports passed. Repeating the
+  launcher sync with `--dry-run` reports no changes. PowerShell parsing and diff checks passed.
+- Restarted only the messaging Gateway; on 2026-09-19 at 14:00:22 it reported `feishu connected`
+  and two active platforms. Desktop and VKC Worker remained running. No test message was sent.
+
 ## 2026-09-17 Douyin mobile live cookie compatibility fix
 
 - Failed live job `job_01789658238867563900_eb90aad8e6` reproduced with configured Douyin cookies:
