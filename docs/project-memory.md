@@ -1,5 +1,17 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-13 messaging retry cookie refresh
+
+- Workflow `workflow_01789267866259066201_9776a91124` was correctly classified as Douyin, but its first job was created
+  before the Douyin cookie file was configured. Manual retry reused the original immutable input and therefore repeated
+  the anonymous probe, producing a second `AUTH_REQUIRED` failure.
+- Messaging retry now atomically refreshes the current platform cookie path in the failed ingest job before returning it
+  to PENDING. Retry/status results include the authoritative source platform, and retry responses include the previous
+  error code plus a deterministic cookie-refresh message so the model does not mislabel a Douyin failure as Bilibili.
+- The configured Douyin Netscape file contains valid current Douyin-domain rows. A redacted live probe of the reported
+  short URL succeeds as platform `douyin` with a 1,466-second duration, and the messaging URL guard resolves it to an
+  approved `iesdouyin.com/share/video/...` URL. Plugin version is `0.15.1`.
+
 ## 2026-09-12 Feishu Douyin collection
 
 - Trusted Feishu collection now accepts exact Douyin on-demand URLs, official `v.douyin.com` short links, official
