@@ -1,5 +1,22 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-17 Feishu Douyin live collection
+
+- Feishu accepts `live.douyin.com/{room}` and official `v.douyin.com` shares. Short links are
+  resolved before admission and classified as live or on-demand; replay does not resolve again.
+  Mobile `webcast.amemv.com/douyin/webcast/reflow/{id}` links retain `sec_user_id` and use the
+  fixed reflow API through StreamGet signing/transport, without following another share redirect.
+- Both web and mobile parsing use the configured Douyin cookies. Mobile parsing selects cookies
+  against the Douyin domain before supplying them to the official mobile API. Room and stream URL
+  validation remain active. Hourly splitting, unlimited total duration and per-part analysis/delivery
+  reuse the existing live workflow. Platform labels now identify Douyin. Plugin version `0.20.0`.
+- The user's basketball share `https://v.douyin.com/uu8xY3bhoD4/` resolved successfully; anonymous
+  probing and a real FFmpeg sample succeeded (5.014 seconds, 3,875,817 bytes). Full-hour recording
+  and actual Feishu delivery have not been exercised for this platform.
+- Full `scripts/check.ps1` passed: 289 VKC, 148 Gateway, 78 Feishu, 1 installer and 30 desktop
+  tests, plus lint/format and desktop type checks. Douyin parser tests cover web/mobile, cookies,
+  offline rooms, short-link classification/replay and hourly continuation.
+
 ## 2026-09-16 Feishu Xiaohongshu live collection
 
 - Messaging accepts numeric Xiaohongshu `/livestream/{id}`, `/hina/livestream/{id}`, and
