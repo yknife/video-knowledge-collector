@@ -1,5 +1,19 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-19 analysis retry progress and one-slot compaction fix
+
+- Job `job_01789798780977734200_4bf049ba65` first failed at 81.9% with `division by zero` while
+  compacting 11 mapped bundles. The deterministic `evenly()` selector divided by `limit - 1`
+  when an anchored collection had exactly one remaining output slot.
+- Automatic retries retain total job progress. The analysis callback restarted its per-attempt
+  counter at 1/13 and requested 16.5%, so the state machine correctly rejected the decrease and
+  replaced the useful failure with `JOB_PROGRESS_INVALID` on attempts two and three.
+- One-slot selection now deterministically takes the first candidate; non-positive limits return
+  no items. Analysis progress is clamped to the attempt's starting total until new work catches up.
+  The state machine's global monotonic-progress invariant remains unchanged.
+- Plugin version `0.21.1`. Regression tests reproduce both the 11-bundle/one-slot compaction and
+  an analysis retry starting from 82%. Full checks pass with 321 VKC tests.
+
 ## 2026-09-19 Feishu Weibo video and live collection
 
 - Desktop and Feishu now recognize Weibo on-demand posts, mobile status/detail pages, Weibo TV
