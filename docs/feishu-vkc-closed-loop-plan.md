@@ -245,6 +245,9 @@ Outbox 持久化契约并为 READY 缓存命中写入即时终态通知；通用
 
 ### 阶段 3：事务性终态 Outbox 与恢复
 
+状态：2026-09-06 已完成，见 [阶段 3 事务性 Outbox 与恢复验收记录](feishu-vkc-stage3.md)。本阶段保证终态
+通知持久化、独立租约、退避和启动恢复；Gateway 实际投递与飞书结果渲染仍属于阶段 4。
+
 工作项：
 
 - 在 Job 终态事务中调用 workflow projector：成功或失败更新 workflow，并以唯一键写入 Outbox。

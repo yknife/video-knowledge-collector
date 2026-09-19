@@ -456,6 +456,20 @@
 - 完整 `scripts/check.ps1` 通过：160 项 VKC、118 项 Gateway API、1 项 Windows 安装测试、Desktop
   typecheck/ESLint 和 29 项 Vitest 均成功。通用终态 projector、Outbox 租约/退避/reconciliation 与实际
   飞书投递仍属于阶段 3–4。
+
+## 2026-09-06 飞书 VKC 闭环阶段 3
+
+- Job 终态事务现在同步投影 workflow，并按订阅用稳定唯一键写入终态 Outbox；ingest 到 analysis 的中间窗口
+  不会提前生成成功通知，重复投影或 reconciliation 不会创建重复记录。
+- 独立 `OutboxService` 提供 claim/heartbeat/acknowledge/fail/release_due。SQLite 领取使用即时写事务避免
+  并发双领；过期租约可恢复，临时错误采用有上限指数退避，认证/授权/失效目标等稳定错误进入 `DEAD`。
+- revision `20260906_0009` 新增不含凭据和原始异常文本的 `notification_outbox_events`，并回填阶段 2
+  已有 Outbox 的 queued 事件。错误码在持久化前执行严格白名单清洗。
+- 每个 profile runtime 在数据库迁移后、Worker 启动前执行 reconciliation，释放崩溃遗留的领取并补齐终态
+  workflow 缺失的 Outbox。Gateway dispatcher 和飞书渲染仍属于阶段 4。
+- 完整 `scripts/check.ps1` 通过：167 项 VKC、118 项 Gateway API、1 项 Windows 安装测试、Desktop
+  typecheck/ESLint 和 29 项 Vitest 均成功。
+
 ## 2026-08-23 live media thumbnail generation
 
 - Live finalization now asks the FFmpeg media adapter for the first decodable video frame, scales it to at most
