@@ -1,5 +1,24 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-06 Feishu VKC stage 4
+
+- Hermes Gateway now starts one transport-neutral `NotificationDispatcher` for every served profile that has an
+  initialized VKC database. It claims the transactional Outbox only while that profile's Feishu adapter is available,
+  renews a separate notification lease, and stops before adapters disconnect. Gateway restart reconciliation resumes
+  abandoned delivery without starting a second VKC Worker.
+- Terminal notifications preserve the trusted subscription chat, thread, and original message. Feishu topic reply
+  failures keep the existing no-top-level-fallback safety rule. Each deterministic result part derives a stable UUID v5
+  from its Outbox part key, so Feishu SDK retries and later Outbox retries reuse the same request identity.
+- Success, degraded, failure, and cancellation templates are rendered directly from bounded structured records. Model
+  text is whitespace-normalized, truncated, and Markdown-escaped; fallback ranges are explicit; failure text excludes
+  raw Job errors, paths, credentials, and command output. Permanent original-target failures send only a metadata-safe
+  operational alert to the configured Feishu home channel.
+- No schema migration was needed beyond stage 3 revisions 0008/0009. Stage 5 remains responsible for conversational
+  status/cancel/retry UX.
+- Full verification passed with 177 VKC tests, 120 Gateway tests, one Windows installer test, Desktop typecheck/lint,
+  and 29 Vitest cases. The live profile remained on schema 0009 with an empty Outbox; after restart Gateway reported
+  one active VKC notification dispatcher and two connected platforms without sending a synthetic Feishu message.
+
 ## 2026-09-06 Feishu VKC stage 0
 
 - Added unregistered collect/status/cancel argument contracts, default-off messaging admission settings and bounded

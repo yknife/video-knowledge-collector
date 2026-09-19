@@ -26,13 +26,13 @@ if ($parseErrors) {
     throw "PowerShell release scripts contain parser errors: $($parseErrors -join '; ')"
 }
 
-uv run --project thirdparty/hermes-agent --extra dev ruff check --isolated --line-length 100 --select E,F,I,UP,B,ASYNC thirdparty/hermes-agent/plugins/video_knowledge/backend thirdparty/hermes-agent/tests/video_knowledge thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py
+uv run --project thirdparty/hermes-agent --extra dev ruff check --isolated --line-length 100 --select E,F,I,UP,B,ASYNC thirdparty/hermes-agent/plugins/video_knowledge/backend thirdparty/hermes-agent/tests/video_knowledge thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py thirdparty/hermes-agent/plugins/video_knowledge/gateway_delivery.py thirdparty/hermes-agent/plugins/video_knowledge/messaging_tools.py thirdparty/hermes-agent/tests/gateway/test_feishu_notification_idempotency.py
 Assert-LastExitCode "ruff check"
-uv run --project thirdparty/hermes-agent --extra dev ruff format --check thirdparty/hermes-agent/plugins/video_knowledge/backend thirdparty/hermes-agent/tests/video_knowledge thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py
+uv run --project thirdparty/hermes-agent --extra dev ruff format --check thirdparty/hermes-agent/plugins/video_knowledge/backend thirdparty/hermes-agent/tests/video_knowledge thirdparty/hermes-agent/plugins/video_knowledge/dashboard/plugin_api.py thirdparty/hermes-agent/plugins/video_knowledge/gateway_delivery.py thirdparty/hermes-agent/plugins/video_knowledge/messaging_tools.py thirdparty/hermes-agent/tests/gateway/test_feishu_notification_idempotency.py
 Assert-LastExitCode "ruff format"
 uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/video_knowledge
 Assert-LastExitCode "Video Knowledge pytest"
-uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/gateway/test_api_server.py thirdparty/hermes-agent/tests/gateway/test_api_server_multiplex_secret_scope.py
+uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/gateway/test_api_server.py thirdparty/hermes-agent/tests/gateway/test_api_server_multiplex_secret_scope.py thirdparty/hermes-agent/tests/gateway/test_feishu_notification_idempotency.py
 Assert-LastExitCode "Hermes Gateway pytest"
 uv run --project thirdparty/hermes-agent --extra dev pytest thirdparty/hermes-agent/tests/test_install_ps1_ascii_only.py
 Assert-LastExitCode "Windows installer source tests"
