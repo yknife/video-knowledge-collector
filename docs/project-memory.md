@@ -1,5 +1,42 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-23 Feishu proxy outage recovery
+
+- Feishu stopped receiving messages while the messaging Gateway process remained alive.
+  Lark endpoint discovery repeatedly failed with ProxyError / WinError 10061 against
+  the Windows-discovered proxy at 127.0.0.1:7890. The persisted connected state was stale;
+  check actual SDK connection logs when diagnosing this symptom.
+- Direct HTTPS to open.feishu.cn returned 200. Backed up the local Hermes profile .env
+  and added NO_PROXY entries for localhost, loopback, open.feishu.cn and .feishu.cn.
+  Requests proxy resolution then returned no proxy for the Feishu endpoint. Other
+  destinations retain their existing proxy behavior.
+- Gracefully drained only messaging Gateway PID 15068 and relaunched with the repository
+  .venv Python in a hidden window. New Gateway PID 31960 established an actual Lark
+  WebSocket at 11:08:28 local time and started one VKC notification dispatcher.
+  Desktop/backend and Worker PIDs remained running. No application code changed.
+- Validation: profile-loaded Requests HTTPS returned 200, actual SDK WebSocket connection
+  succeeded, and fresh Gateway state reports connected. A new user message is still
+  needed to verify end-to-end reply delivery; no synthetic chat test was submitted.
+
+## 2026-09-20 Live recording survives early clean EOF
+
+- Reported job `job_01789824909048230000_6a6f97bbe8` saved one 2895.961-second
+  segment with a 3600-second part limit and unlimited total budget. Its event history
+  went directly from RECORDING to finalization with no continuation job.
+- The pipeline treated `interrupted=False` (FFmpeg exit 0) as broadcast completion,
+  although a CDN EOF can be clean while the room remains live. It also queued another
+  part only when the saved duration reached the hour boundary.
+- Early EOF now triggers room re-resolution and recording of the remaining duration.
+  Two consecutive offline responses confirm broadcast end; transient resolver errors
+  and missing streams use bounded retries. If retries exhaust without confirmed end,
+  save the valid partial segment and queue a continuation with the original subscription.
+  Finite budgets deduct actual saved duration. Cancellation still prevents continuation.
+- Focused live tests cover clean EOF at 48 minutes, a transient offline response,
+  a resolver error, retry exhaustion, confirmed offline, hourly chains and cancellation.
+  All 327 VKC tests and focused lint passed. The idle managed Worker was restarted
+  and respawned successfully to load the fix; no active recording was interrupted.
+  Do not automatically revive the user's later cancelled recording monitor.
+
 ## 2026-09-20 Task cards contain long URLs
 
 - Task-center columns and Radix ScrollArea content can now shrink to the available width instead
