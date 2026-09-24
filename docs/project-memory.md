@@ -1,5 +1,27 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-24 Wiki 阶段 4 桌面阅读与搜索
+
+- 阶段 4 已实现，报告 `docs/wiki-stage-4.md`。Hermes 子模块新增 `WikiReadService`、Wiki 页面/来源/搜索/引用 API、可重建 FTS5 投影及 Alembic `20260924_0013`；Hermes Desktop 视频知识插件新增“知识库”标签、媒体详情 Wiki 状态和操作、受控 Markdown 阅读与引用回看。
+- 搜索用中文单字/双字与英文词索引已提交页面；Wiki 修订改变时自动重建，手动重建可恢复被清空或删除的 FTS 投影，不改写正文。读取页面只使用阶段 1 的已确认快照；目录、类型/标签、来源修订、页间/反向链接均有 API。
+- Desktop Markdown 只把已知 Wiki 页面和通过结构化引用关联的时间证据渲染为按钮；HTML、危险 URL、任意文件链接和图片均不会执行/加载。点击引用先由后端复核来源，再把媒体 ID 与 `start_ms` 送入现有播放器；媒体缺失与引用失效有明确状态。
+- 22 个 Wiki 定向测试和 5 个 Desktop Wiki Markdown 测试通过，涵盖 A/D 中文命中、FTS 行/表重建、页面哈希、直播场次反向链接、时间引用、媒体删除、脚本/文件链接防护与长页面。完整 `scripts/check.ps1` 最终通过：349 VKC、148 Gateway、78 Feishu、1 installer、35 Desktop 测试，以及 lint、format、typecheck。未操作用户真实媒体库或重启生产进程。
+
+## 2026-09-24 Wiki 阶段 3 自动入库与补录
+
+- 阶段 3 已实现，报告 `docs/wiki-stage-3.md`。Hermes 子模块新增 `WIKI_INGEST` 独立任务、`wiki_ingestions` ORM/Alembic `20260924_0012`、自动入库设置、手动及批量补录与状态 API、Wiki Worker pipeline。阶段 2 的未提交改动仍在同一工作树，未丢弃或提交。
+- 自动入库升级默认关闭。用户开启后，在四份 KnowledgeDocument READY 文档的同一事务内生成唯一 Wiki 入库记录、Job 与 `job.created` 事件；关闭后不再产生新自动任务，既有排队任务继续执行。手动入库与补录独立于开关。
+- Worker 经任务状态机租约领取，取得 Wiki fencing 租约，先恢复 PREPARED 发布，再执行阶段 2 来源快照与视频页提交。文件提交后数据库确认失败，重试识别已提交来源，不增加 Wiki 修订或日志。旧版本晚到报告冲突，不回退新页；失败只影响 Wiki Job。
+- 提供 `/api/v1/wiki/settings`、`/ingestions`、`/media/{id}/ingest`、`/backfill/preview`、`/backfill`、`/backfill/{batch_id}/cancel`。预览区分新增、同步、版本更新、无分析、待复核与任务状态。阶段 4 负责 Desktop 用户界面、搜索和阅读。
+- 17 个 Wiki 定向测试通过，覆盖自动开关、事务回滚、重启消费、重复入库、版本倒序、补录取消、文件提交后确认失败及从阶段 1 迁移到 `20260924_0012`。完整 `scripts/check.ps1` 最终通过：344 VKC、148 Gateway、78 Feishu、1 installer、30 Desktop 测试，以及 Python lint/format 和 Desktop typecheck/lint。未对用户真实媒体库执行批量补录、启用自动开关或重启生产进程。
+
+## 2026-09-24 Wiki 阶段 2 来源快照与视频页
+
+- 阶段 2 已实现，报告 `docs/wiki-stage-2.md`。Hermes 子模块新增确定性的 `WikiVideoService`、结构化引用解析类型和阶段 0 样本副本；未增加 LLM 调用、数据库迁移、自动任务或桌面 UI。
+- `freeze(media_id, four_document_ids)` 在同一数据库读取会话中固定 READY Transcript、片段和四类分析，要求媒体/Transcript/fingerprint/version/model/Prompt 一致并严格验证每条引用的 segment IDs 与毫秒边界。以规范 JSON 计算 `source_revision`，在 `raw/videos/{media_id}/{source_revision}/` 发布不可变 metadata/transcript/analysis/manifest；读取复核所有哈希和内容指纹。公开 URL 去掉凭据、query 与 fragment。
+- `ingest` 经阶段 1 提交服务写稳定视频页；frontmatter 保存 source_refs、分析生成属性和结构化 citation_refs。摘要标为来源概述；降级条目及范围显示待复核。重复输入不新增提交，F 更新原页且 A 来源快照仍可读。可靠的 `:partN` LiveSession 键生成同场目录，L1/L2 保持独立视频页和分段内时间。
+- `resolve_citation` 复核来源片段后返回现有 Desktop 使用的 `/video-knowledge?media=...&t=<毫秒>` 路由。10 个 Wiki 定向测试通过；完整仓库检查见阶段 2 报告。阶段 3 仍须增加事务性入库意图、独立任务与自动恢复。
+
 ## 2026-09-24 Wiki 阶段 1 初始化与可靠存储
 
 - 阶段 1 已实现并验收，报告 `docs/wiki-stage-1.md`。Hermes 子模块新增 `WikiStorageService`、Wiki catalog/commit/page projection ORM 与 Alembic `20260924_0011`；未迁移本机用户数据库或启动真实 Wiki。阶段 2 从该服务接入来源快照与视频页。

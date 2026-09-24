@@ -44,7 +44,7 @@ npm.cmd --prefix thirdparty/hermes-agent/apps/desktop exec -- eslint thirdparty/
 Assert-LastExitCode "Video Knowledge plugin lint"
 Push-Location -LiteralPath "thirdparty/hermes-agent/apps/desktop"
 try {
-    npm.cmd exec -- vitest run src/plugins/video-knowledge/api.test.ts electron/bootstrap-runner.test.ts scripts/write-build-stamp.test.mjs
+    npm.cmd exec -- vitest run src/plugins/video-knowledge/api.test.ts src/plugins/video-knowledge/wiki-markdown.test.tsx electron/bootstrap-runner.test.ts scripts/write-build-stamp.test.mjs
     Assert-LastExitCode "Video Knowledge and RC bootstrap tests"
 } finally {
     Pop-Location
