@@ -1,5 +1,30 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-24 Wiki 阶段 0 契约与验收样本
+
+- 阶段 0 已通过，报告 `docs/wiki-stage-0.md`；ADR、SCHEMA 示例、8 个合成样本、机器校验器已落库。没有创建真实 Wiki、迁移数据库、启动服务或执行模型。
+- 核查发现四类 KnowledgeDocument 在 `_save_bundle` 同事务保存，但 Job 完成状态另行提交；后续自动入库意图必须与四文档同事务。当前 `latest_documents` 按类型取最大 version，可能混合不同分析轮次；阶段 2/3 要使用固定文档 ID 集合。
+- Hermes 子模块提交 `351ebd8e2df78dacb66b693669b0bc58da8e7ee7`；`llm-wiki` 2.1.0 SKILL.md SHA-256 `0229e37c1783fcac5b77cfb3242703666cf4aa472d2ae85b6bd5279756b515b6`。本机 `skill_view` 和 `/llm-wiki` 原生加载 smoke test 通过；阶段 5 仍需实现真正的受控 Wiki Agent。
+- `python scripts/validate-wiki-stage-0.py` 与八份 AnalysisBundle schema 校验通过。阶段 1 以 ADR 和 SCHEMA 示例为契约起点，须注入发布中断和旧租约测试。
+
+## 2026-09-24 Video LLM Wiki implementation plan
+
+- Added `docs/video-knowledge-wiki-implementation-plan.md` as the implementation and
+  acceptance baseline for a personal video knowledge Wiki inspired by Karpathy.
+- Stages 0–8 cover contracts, storage, video pages, durable automatic ingestion,
+  desktop reading/search, cross-video synthesis, Hermes queries, lint/lifecycle,
+  and migration/end-to-end acceptance. All stages remain not started.
+- Reuse the active Hermes plugin and its existing analysis versions and citations.
+  Plan requires immutable source snapshots, revision-checked commits, independent
+  retryable Wiki jobs, recoverable indexes, and preservation of user edits.
+- This task only created the plan; no Wiki runtime, database migration, backfill,
+  model invocation, or service restart was performed.
+- Plan v1.1 requires actual Hermes llm-wiki skill loading for ingest (stage 5),
+  query (stage 6), and semantic lint (stage 7), with runtime evidence and final
+  three-flow acceptance. Stage 0 pins skill hash/version and verifies the loader.
+  Deterministic export in stages 1–4 is not counted as skill-driven synthesis.
+  A missing/disabled/mismatched skill must not silently fall back to a custom prompt.
+
 ## 2026-09-23 Feishu proxy outage recovery
 
 - Feishu stopped receiving messages while the messaging Gateway process remained alive.
