@@ -1,5 +1,12 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-24 Wiki 阶段 1 初始化与可靠存储
+
+- 阶段 1 已实现并验收，报告 `docs/wiki-stage-1.md`。Hermes 子模块新增 `WikiStorageService`、Wiki catalog/commit/page projection ORM 与 Alembic `20260924_0011`；未迁移本机用户数据库或启动真实 Wiki。阶段 2 从该服务接入来源快照与视频页。
+- 默认 Wiki 位于 storage_root/wiki，具有稳定 wiki_id。初始化保留已有文件并拒绝未知非空目录。受控页面路径、Markdown 链接、frontmatter、revision/hash 与外部编辑冲突均校验；稳定 page_id 与标题分离。
+- 文件提交使用数据库租约和 fencing token、PREPARED journal、每提交快照与 COMMITTED 投影。读取仅返回已确认的快照；发布中断后新租约可按相同 commit_id 重放，不重复日志。单一 Wiki/base revision 有唯一提交约束。
+- 6 个 Wiki 存储测试通过，包括 Windows junction 越界、初次及后续发布中断、旧租约拒绝。临时 SQLite 从空库升级到 `20260924_0011` 成功。完整 `scripts/check.ps1` 通过：333 VKC、148 Gateway、78 Feishu、1 installer、30 desktop 测试及 lint、format、typecheck。最后对初始化快照的读取边界作了小修补，定向测试复跑通过。
+
 ## 2026-09-24 Wiki 阶段 0 契约与验收样本
 
 - 阶段 0 已通过，报告 `docs/wiki-stage-0.md`；ADR、SCHEMA 示例、8 个合成样本、机器校验器已落库。没有创建真实 Wiki、迁移数据库、启动服务或执行模型。
