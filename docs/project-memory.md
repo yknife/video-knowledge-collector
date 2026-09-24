@@ -1019,3 +1019,37 @@
   per document, and a 48,000-character aggregate budget; truncated documents are marked explicitly.
 - Fresh Video Knowledge chats are instructed to search persisted Hermes knowledge first, then use transcript tools
   to verify citations, expand details, or fill gaps. Selected-series `media_ids` scope remains mandatory.
+
+## 2026-09-24 Wiki stage 5 fusion
+
+- Wiki stage 5 now uses a separate lower-priority `WIKI_FUSE` job after source/video-page publication. Existing committed
+  pages can enqueue fusion through `POST /api/v1/wiki/fusion/backfill`; Desktop shows source and fusion status separately.
+- The Hermes Wiki adapter loads the installed `llm-wiki` 2.1.0 Skill through the native slash-skill loader and pins its
+  SHA-256. Its isolated agent sees only five Wiki tools. It reads SCHEMA/index/recent log before source/page tools and
+  records Skill, model, tool order, orientation hashes, API calls, duration, estimated cost, and commit ID in a local audit.
+- `WikiCompiler` validates bounded concept/entity/comparison change sets against immutable source snapshots and exact
+  segment/time citations, rejects unsafe paths/markup and degraded evidence, and preserves old claims on updates.
+  Same-session live parts do not count as independent sources. Committed source markers prevent duplicate publication
+  after a lost database confirmation. Fusion failures do not remove the source package or video page.
+- Real `deepseek-v4.1-flash` profile ingest on synthetic A/B/C/D succeeded. The third run produced an A/B/C comparison
+  with five disputed claims, exact 10-second citations, and no D merge. The second run showed model variance: C was
+  omitted from the comparison despite being present in a general concept page. The ingest instruction was strengthened
+  and the smoke script now asserts A/B/C conflict colocation and D isolation. Reports and exact run IDs are in
+  `docs/wiki-stage-5.md`; local synthetic audit output is under `artifacts/wiki-acceptance/stage-5/` (gitignored).
+- Migration `20260924_0014` adds `fusion_job_id`, `fusion_run_id`, and `fusion_commit_id` to wiki ingestions. Stage 5
+  was committed in Hermes as `64663971ca`; the full check command remains `scripts/check.ps1`.
+
+## 2026-09-24 Feishu notification digest completion guard
+
+- A delivered analysis notification ended with a dangling numbered item. Read-only inspection of its persisted READY
+  summary found a 573-character `notification_summary` ending in `3.` while the complete `summary` was 453 characters.
+  The renderer's 900-character limit and transport splitter were not responsible; the model-generated digest passed
+  JSON/schema validation but lacked a completeness check.
+- A shared digest validator now rejects numbered outlines, the knowledge-point heading, missing final Chinese sentence
+  punctuation, and overlong text. Generation retries invalid digests and falls back to the complete summary after its
+  configured attempts. Rendering revalidates persisted digests, so old malformed records use the complete summary;
+  long fallback summaries end at a sentence when possible and show an ellipsis.
+- The affected database was inspected read-only and not changed. The already-delivered Feishu message was not resent.
+  Targeted knowledge/notification tests cover retry, fallback and long excerpts. Full `scripts/check.ps1` passed:
+  361 VKC, 148 Gateway, 78 Feishu, 1 installer, 35 Desktop tests, plus Ruff/format/typecheck/lint.
+  The Hermes fix was committed as `a1a9f79331`.
