@@ -1,5 +1,15 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-25 Hermes Wiki 入库超时与重复引用修复
+
+- 诊断与修复见 `docs/hermes-wiki-ingestion-timeout-fix.md`。桌面日志中的 VKC SQLite `QueuePool limit of size 5 overflow 10 reached` 与 Electron 15 秒等待响应超时同时出现；后端仍有进程与监听端口。VKC 事件订阅此前每条任务进度都刷新全部查询，现合并事件并仅在状态变化时刷新全局数据。
+- 一项 `WIKI_INGEST` 因分析引用重复片段 ID 达到 3 次尝试后失败。来源快照继续保留原始分析，页面引用去重，真实片段与时间范围仍严格校验。当前运行中的后端/Worker 需要重启后加载修复，失败任务需由用户在任务中心手动重试；诊断期间未修改私人 Wiki 或任务。
+
+## 2026-09-25 Wiki 阶段 7 巡检与生命周期
+- 阶段 7 已实现，报告 `docs/wiki-stage-7.md`。前一轮阶段 6 已提交并推送：Hermes `30c39cede5`、主仓库 `65ba92b`。
+- 新增确定性结构巡检、真实 `llm-wiki` 语义巡检、页面历史和 diff、外部编辑冲突检测、索引/断链显式修复、回退、来源撤回与规范影响预览；FastAPI、Desktop 控制器和 UI 均有路由。人工复核语义报告后可在 UI 修改正文，经报告哈希和页面版本校验受控提交；后续自动同步会报告人工协调冲突。规范变更可显式创建新融合任务，绕过已提交来源的幂等跳过，编译指纹包含规范哈希。没有数据库迁移，原始来源和用户 `notes/` 保留。
+- 新分析版本发布后，Worker 在融合前撤回旧版本的有效支撑；撤回后的来源不能通过回退、融合或迟到的视频入库重新激活。真实 `deepseek-v4.1-flash` 在隔离 A/B/C 样本检出索引重建观点冲突，报告 ID `wl_31ed826294e3499bbb11457060609d15`；Skill 加载、方向读取和页面读取均有审计。首轮提交格式失败后已改进并复测。私人 Wiki 未被操作。
+
 ## 2026-09-25 Wiki 阶段 6 Hermes 问答与保存
 
 - 阶段 6 已实现，报告 `docs/wiki-stage-6.md`。Hermes 子模块新增 `WikiQueryAdapter`、`WikiQueryService`、`POST /wiki/query`、`POST /wiki/query/{run_id}/save`、桌面知识库问答与“保存到知识库”；现有桌面控制器同时接入两条路由。以前轮未提交的 Wiki 路由修复为基础，未丢弃其改动。
