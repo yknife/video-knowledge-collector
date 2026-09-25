@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-25 Wiki 阶段 8 历史迁移与交付
+
+- 阶段 8 功能实现与大部分验收完成，报告 `docs/wiki-stage-8.md`；计划状态为「待验收」，仅缺当前 Hermes Desktop 中同一媒体时间引用的真实播放器点击观察。运维文档为 `docs/wiki-operations.md`，新增限速补录/dry-run/逐项状态 CLI 与一致性备份恢复工具。
+- 本机真实历史资料补录 10 个普通视频与同一直播 4 个分段；14 项基础入库与融合均成功，来源快照可复核，重复提交不新增任务或修订。真实自动媒体具备 READY Transcript、四份分析、自动视频页、主题提交和引用该媒体的真实 query 答案；恢复副本上时间路由可解析。真实 Wiki 最终备份于修订 58，829 文件恢复副本通过 SQLite 完整性、72 页读取、搜索重建、来源和引用检查，且可立即取得新租约；原媒体未包含。
+- 1,000 页隔离基准、200 命中的英文查询、5 次预热与各 30 次请求：搜索 p95 327.22ms、页面 p95 8.5ms；读取服务按修订缓存链接并批量读取命中页。故障测试含模型超时、ENOSPC、索引失败、进程中断、冲突和旧租约；完整 `scripts/check.ps1` 通过。Skill 真实 ingest/query/lint 均有固定哈希审计，证据在本机忽略目录 `artifacts/wiki-acceptance/stage-8/`。
+
+## 2026-09-25 Wiki 融合未提交变更集
+
+- 针对 `WIKI_AGENT_INCOMPLETE` 的诊断与修复见 `docs/wiki-fusion-incomplete-fix.md`。失败任务并非从未调用提交工具；模型提交了校验不通过的变更集。隔离复制当前 Wiki/数据库复现到未读取的来源引用、单来源比较页以及真实片段 ID 配错毫秒时间；一次模型回合在副本上修正后成功，真实 Wiki 未修改。
+- 融合提交工具现有嵌套参数 schema 与明确的来源/独立性说明，鼓励少量聚焦主张；输出上限提高到 8192 token。未通过的提交在审计和任务错误中保留最后一个静态校验原因，方便定位。编译器仍核实真实片段 ID，并从片段计算引用时间。Worker 已重启，原任务通过状态机重试并于第 7 次尝试成功，提交 `wc_e93506414ffa4a3aa67e8c7d1ea6e122`。
+
 ## 2026-09-25 Hermes Wiki 入库超时与重复引用修复
 
 - 诊断与修复见 `docs/hermes-wiki-ingestion-timeout-fix.md`。桌面日志中的 VKC SQLite `QueuePool limit of size 5 overflow 10 reached` 与 Electron 15 秒等待响应超时同时出现；后端仍有进程与监听端口。VKC 事件订阅此前每条任务进度都刷新全部查询，现合并事件并仅在状态变化时刷新全局数据。
