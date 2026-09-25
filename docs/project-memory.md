@@ -1,5 +1,16 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-25 Wiki 阶段 6 Hermes 问答与保存
+
+- 阶段 6 已实现，报告 `docs/wiki-stage-6.md`。Hermes 子模块新增 `WikiQueryAdapter`、`WikiQueryService`、`POST /wiki/query`、`POST /wiki/query/{run_id}/save`、桌面知识库问答与“保存到知识库”；现有桌面控制器同时接入两条路由。以前轮未提交的 Wiki 路由修复为基础，未丢弃其改动。
+- query 回合实际加载固定 SHA-256 的 `llm-wiki` 2.1.0，先读 SCHEMA/index/log，再搜页、读页和原始片段；答案引用必须匹配已读页面修订和真实 Transcript 片段。query 页可被后续搜索阅读，但不能作为新增独立佐证。默认只在 `storage_root/wiki-query-runs/{wiki_id}/` 保存私有 run 与审计，不改写 Wiki 目录；显式保存使用受控提交协议，重复保存幂等，页面保留原始 query run_id 与视频时间引用。
+- 真实 Hermes `deepseek-v4.1-flash` 在临时 Wiki 上完成 10 个合成问题：3 单视频、3 综合、2 冲突、2 证据不足。首轮第 9 题不足标记有误，收紧指令并单独复测后两道不足题都标记为不足、无引用，最终答案未暴露内部字段名。完整合成审计在本地忽略目录 `artifacts/wiki-acceptance/stage-6/`；未操作私人媒体库。
+
+## 2026-09-24 桌面端 Wiki 路由修复
+
+- Hermes Desktop 的 VKC 插件通过 `VideoKnowledgeController` 调用后端。阶段 3–5 新增的 Wiki 路由原先只注册在 FastAPI，导致“手动入库”以及知识库其他操作返回 `Video Knowledge route not found`。
+- 控制器现接入完整 Wiki 路由组，并与 FastAPI 共用入库设置和补录请求校验模型。通过桌面控制器回归测试，验证手动入库、幂等提交、状态、页面、来源、引用和搜索。运行中的 Hermes Python 服务须重启后才会加载此修复。
+
 ## 2026-09-24 Wiki 阶段 4 桌面阅读与搜索
 
 - 阶段 4 已实现，报告 `docs/wiki-stage-4.md`。Hermes 子模块新增 `WikiReadService`、Wiki 页面/来源/搜索/引用 API、可重建 FTS5 投影及 Alembic `20260924_0013`；Hermes Desktop 视频知识插件新增“知识库”标签、媒体详情 Wiki 状态和操作、受控 Markdown 阅读与引用回看。
