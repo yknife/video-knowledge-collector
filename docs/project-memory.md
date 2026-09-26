@@ -1,5 +1,23 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-26 Wiki 提问入口被路由恢复重复初始化
+
+- 修复见 `docs/wiki-chat-workspace-race-fix.md`。用户通过知识库按钮进入，实际两次 Desktop 会话 `cwd` 仍为空。复现为 `ContribWiring` 设置 Wiki 草稿后，同一 React commit 中 `useRouteResume` 用旧渲染状态再次创建普通草稿，清除显式工作目录；首轮技能注入也因此跳过。
+- 路由恢复现先检查即时草稿标记和会话 refs，避免重复初始化。跨 hook 回归测试修复前丢失 Wiki 目录，修复后 `session.create` 正确携带 `D:\vkc\storage\wiki`。后端仍严格核对会话工作目录，错误改为中文指引、明确错误码和停止重试/自行修改代码的提示。
+- 完整检查通过：391 VKC、148 Gateway、78 Feishu、1 installer、115 Desktop 测试及 lint/typecheck，已把此次入口回归测试纳入 `scripts/check.ps1`。没有改写历史会话或用户 Wiki；需要加载前后端新代码后，从知识库按钮进入新的 Chat，旧的错误会话不会自动改绑目录。
+
+## 2026-09-26 Wiki Chat 提问耗尽预算后无法提交
+
+- 修复见 `docs/wiki-query-budget-fix.md`。截图中的 `WikiAgentError` 实际由大量搜索耗尽 40 次工具额度引起，旧代码连提交答案/证据不足也禁止，外层聊天只收到异常类名并重复研究。现在搜索最多 8 次，读取最多 40 次，提交独立于读取预算；返回剩余额度、明确关键词搜索语义，补全引用 schema。未提交有效答案时返回安全原因、run ID 和不要自动重试的提示，审计保留静态校验原因。
+- 完整检查通过：389 VKC、148 Gateway、78 Feishu、1 installer、40 Desktop 测试及 lint/typecheck；最后审计调整后 16 项定向测试再次通过。在真实 Wiki 修订 199 的隔离副本，以实际 DeepSeek 重问截图原问题成功（约 134 秒、10 条校验引用）；提问不改文件，随后受控保存到副本修订 200，重复保存幂等。原 Wiki 未试写。证据在本机忽略目录 `artifacts/wiki-query-fix/`。
+- 当前 Desktop 未重启，需完整退出并重新打开以加载 Python 后端修复，然后从知识库开启新 Chat；外层模型在真实界面中的自主保存决策仍未人工观察。
+
+## 2026-09-26 Wiki 提问迁移至 Hermes Chat Workspace
+
+- 实现见 `docs/wiki-chat-workspace-plan.md`。知识库页面移除内嵌提问框、答案及手动保存按钮；“向知识库提问”从当前 profile 的存储设置定位 Wiki 目录，并打开绑定该真实工作目录的新 Chat。首轮发送通过原生 `/llm-wiki` 加载技能，后续问题留在该会话中。
+- 插件新增 `wiki_ask` / `wiki_save` 聊天工具，复用现有 `WikiQueryService` 和受控 Wiki 提交。模型可只回答，也可保存有证据的研究问答页；查询审计记录来源 Chat 会话 ID，保存时核对同一会话。工具还核对 profile 的 `state.db` 中会话目录与真实 Wiki 根目录，防止其他会话借用 run。Wiki 目录中的 Desktop Agent 仅获得 `video_knowledge` 工具集，普通文件/终端写工具不进入模型工具列表；普通视频只读问答继续使用原工具集。
+- `scripts/check.ps1` 通过：385 VKC、148 Gateway、78 Feishu、1 installer、40 Desktop 测试，以及 Ruff、Desktop typecheck/lint。另有 16 项 TUI compute-host/make-agent 定向测试通过。Wiki 聊天工具模块按根检查同等严格规则单独通过 lint/format。未重启运行中的 Hermes 服务，也未用私人 Wiki 试写；真实 Desktop 模型保存/不保存两分支仍需在隔离副本观察。
+
 ## 2026-09-26 自定义 DeepSeek 在模型菜单中缺失
 
 - 本机 `providers.deepseek` 使用新密钥引用，但同名内置 `deepseek` 使用另一条 `DEEPSEEK_API_KEY`；菜单先跳过同名项，再按相同接口地址去重，导致自定义端点不可见。已修正：与内置提供方重名的自定义端点用 `custom:<id>` 单独展示（例如 `deepseek (Custom)`），保存、激活和前端切换均使用该身份。
