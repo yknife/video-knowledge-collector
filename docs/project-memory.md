@@ -1,5 +1,11 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-26 Wiki 问答页显示 Markdown 转义符
+
+- 对照真实页面 `query_9c4bca5b6602016150d363ea` 及其审计答案确认：模型输出正常的 `- `，`WikiQueryService._markdown_text` 为安全纯文本存储转义成 `\- `，前端 `WikiMarkdown.displayText` 只还原方括号，导致反斜杠直接显示。因此是展示与存储格式不匹配，不是模型生成错误。
+- `wiki-markdown.tsx` 现在在识别结构/链接后，仅在文本节点还原 Markdown ASCII 标点转义，涵盖连字符、括号、星号及反斜杠；不把还原后的文本重新解析为链接或 HTML，代码围栏内保持原样。旧页面无需重写或重新生成；后端保存、引用校验保持不变。
+- 10 项 Markdown 渲染测试通过，涵盖截图中的列表前缀、路径、转义链接/HTML不激活和代码内容；前端 lint 和 Desktop typecheck 通过。此修复仅涉及前端，加载新前端代码即可，无需重启 Gateway。
+
 ## 2026-09-26 Wiki 提问入口被路由恢复重复初始化
 
 - 修复见 `docs/wiki-chat-workspace-race-fix.md`。用户通过知识库按钮进入，实际两次 Desktop 会话 `cwd` 仍为空。复现为 `ContribWiring` 设置 Wiki 草稿后，同一 React commit 中 `useRouteResume` 用旧渲染状态再次创建普通草稿，清除显式工作目录；首轮技能注入也因此跳过。
