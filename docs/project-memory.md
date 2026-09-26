@@ -1,5 +1,15 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-09-26 自定义 DeepSeek 在模型菜单中缺失
+
+- 本机 `providers.deepseek` 使用新密钥引用，但同名内置 `deepseek` 使用另一条 `DEEPSEEK_API_KEY`；菜单先跳过同名项，再按相同接口地址去重，导致自定义端点不可见。已修正：与内置提供方重名的自定义端点用 `custom:<id>` 单独展示（例如 `deepseek (Custom)`），保存、激活和前端切换均使用该身份。
+- 22 项定向 Python 测试、Desktop 类型检查和相关前端 lint 通过；真实配置的只读目录检查能同时列出内置与自定义 DeepSeek。当前运行的 Python 后端仍需重启后加载修复；未修改用户配置或密钥。
+
+## 2026-09-25 Hermes Desktop `hermes:api` 连接重置
+
+- 诊断与修复见 `docs/hermes-api-econnreset-fix.md`。桌面日志显示后端 09:33:47 UTC 退出、09:33:55 UTC 重新就绪，与阶段 8 后主动重启吻合；用户片段没有时间戳，因此是高概率归因。后端目前健康。
+- Electron 主进程对本机安全 GET 的短暂 socket 断连重新获取后端连接并只重试一次；POST 等写请求不自动重放，改为提示检查状态以避免重复。真实 TCP reset 用例、定向测试、Desktop 类型与 lint 已验证。当前运行中的 Electron 需要重载才会加载主进程改动。
+
 ## 2026-09-25 Wiki 阶段 8 历史迁移与交付
 
 - 阶段 8 功能实现与大部分验收完成，报告 `docs/wiki-stage-8.md`；计划状态为「待验收」，仅缺当前 Hermes Desktop 中同一媒体时间引用的真实播放器点击观察。运维文档为 `docs/wiki-operations.md`，新增限速补录/dry-run/逐项状态 CLI 与一致性备份恢复工具。
