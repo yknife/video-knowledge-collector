@@ -1095,3 +1095,16 @@
   Targeted knowledge/notification tests cover retry, fallback and long excerpts. Full `scripts/check.ps1` passed:
   361 VKC, 148 Gateway, 78 Feishu, 1 installer, 35 Desktop tests, plus Ruff/format/typecheck/lint.
   The Hermes fix was committed as `a1a9f79331`.
+
+## 2026-09-26 Preserve full Feishu fallback conclusions
+
+- Read-only inspection of workflow `workflow_01790401135224687600_df1d7e2f93` found a complete
+  1491-character persisted summary and a null notification digest. Logs at 13:40:22 and 13:40:24
+  show both digest attempts rejected as incomplete. The delivered message lost the summary's ending.
+- The renderer now preserves the entire fallback summary and uses the existing 6000-character
+  message packing and numbered, idempotent parts. Valid short model digests remain preferred.
+  This supersedes the earlier sentence-boundary/ellipsis fallback, which still omitted content.
+- Notification dispatcher and knowledge service tests: 40 passed, including single-message and
+  multipart full-content preservation. The database and already-delivered notification were not changed.
+- The local Feishu gateway processes started on September 23 and must be restarted to load this
+  change; restarting Desktop alone does not update an independently running gateway.
