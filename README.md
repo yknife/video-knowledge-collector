@@ -166,6 +166,27 @@ VKC_MESSAGING_MAX_VIDEO_DURATION_SECONDS=0
 
 Windows 桌面默认数据目录为 `%LOCALAPPDATA%\hermes`；自定义 `HERMES_HOME` 或 profile 时以实际配置目录为准。
 
+### 重启 Gateway
+
+更新飞书入口或结果通知代码后，在仓库根目录的 PowerShell 终端执行：
+
+```powershell
+.\thirdparty\hermes-agent\.venv\Scripts\python.exe -m hermes_cli.main gateway restart
+.\thirdparty\hermes-agent\.venv\Scripts\python.exe -m hermes_cli.main gateway status
+```
+
+`restart` 重启当前 profile 的网关；Windows 支持已安装的网关服务和手动运行的网关。
+`status` 用于确认重启后的运行状态。仅重启 Desktop 不会更新独立运行的 Gateway。
+若启动时设置了 `HERMES_HOME`，重启时需在同一环境下执行；使用命名 profile 时，显式指定相同名称：
+
+```powershell
+.\thirdparty\hermes-agent\.venv\Scripts\python.exe -m hermes_cli.main --profile "<profile名称>" gateway restart
+.\thirdparty\hermes-agent\.venv\Scripts\python.exe -m hermes_cli.main --profile "<profile名称>" gateway status
+```
+
+飞书分析完成后会先发送保留标题、作者、时长等信息的阅读版，再发送仅含结论的分享版。
+超长结论会自动分条保留全文；已投递的历史消息不会因重启而自动补发分享版。
+
 ### 发送任务
 
 将下面的示例地址替换为实际视频或直播链接：

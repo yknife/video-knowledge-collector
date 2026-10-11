@@ -1,5 +1,12 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-10-11 飞书阅读与结论分享双消息
+
+- 成功及 PARTIAL 分析通知先保留现有阅读格式（标题、作者、时长、结论、完整结果提示与追踪信息），再发送仅含相同结论的分享副本；分享副本无标题、标签或通知编号。两份内容复用已校验短摘要或完整 summary，并保留 Markdown 安全转义。
+- 阅读分片继续使用 `notification_id:part:N`，分享分片使用独立稳定的 `notification_id:conclusion:N`；全部分片成功后才确认 DELIVERED。分享副本失败会进入原有 Outbox 重试，两份副本复用各自幂等键。超长结论分别按 6000 字符正文分条，不截断；失败或取消仍仅发送原通知。
+- 410 项 VKC 后端测试、含飞书 UUID 去重的 17 项定向测试以及相关 Ruff lint/format、diff 检查通过。回归覆盖正常/兜底、短摘要/完整摘要、长结论与分享失败后重启重试。同步更新 `docs/feishu-vkc-stage4.md`；无需数据库迁移或 API 类型变更。
+- 未发送真实飞书消息或重启当前服务。需重启飞书 Gateway 加载新逻辑；仅重启 Desktop 不会更新独立运行的 Gateway。已投递历史消息不会自动补发分享副本。
+
 ## 2026-10-07 飞书 B 站视频 PROBING / TOOL_CRASH
 
 - `workflow_01791345910154248000_193876ad08` 已受理，3 次探测均失败。用原链接和 Cookies 副本复现 yt-dlp 2026.7.4 的 `Unable to extract initial state`；标准链接也失败。B 站返回 HTML 空壳，缺少初始数据赋值，但视频元数据 API 返回成功；不是飞书路由故障。
