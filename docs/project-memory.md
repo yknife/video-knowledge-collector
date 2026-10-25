@@ -1,5 +1,69 @@
 # Video Knowledge Collector 项目记忆
 
+## 2026-10-16 新工作流未关联旧媒体时仍重复入库
+
+- 新失败任务 `job_01792109031691324900_6b1eeacc0c` 与原任务共享 source_id，但 media_id 为空；此前修复仅覆盖 job.media_id 已有值的图片重采集。只读数据库确认旧媒体仍为 0.04 秒 JPG，原任务仍 FAILED/attempt 6，新任务为 FAILED/attempt 2。
+- Worker 在探测获得 external_id 后，按来源和外部 ID 查找已有媒体。旧图片走原媒体替换路径；正常视频直接复用。JobStateMachine.update_progress 在活跃租约校验下可同步 media_id，并随进度事件同步工作流，避免复用媒体后任务关联仍为空。
+- 回归覆盖持久化 media_id 为空的任务、图片重采集、正常视频的后续工作流复用及字幕检索。完整后端 487 项通过（9 条已有 Alembic 警告）；最终定向流水线 28 项、状态机/API 6 项及相关 Ruff/format/diff 检查通过。
+- 确认无 RUNNING/PENDING/RETRY_WAIT 任务后停止旧 Worker PID 36428；桌面 supervisor 已拉起新 Worker PID 30992（启动器 22132），加载当前修复。
+- 使用实际 SQLite 备份和此前下载的 144 MB MP4，在 `D:/vkc/storage/temp/unlinked-ingest-2r7wmbm5` 隔离重放原任务，成功达到 ACQUIRING_SUBTITLE，媒体 ID 不变、JPG 原文件保留、视频时长 760.105 秒，并经真实 FFmpeg 成功抽取音频。验证脚本为本地忽略文件 `artifacts/verify_unlinked_ingest.py`。未执行模型转写/分析或发送飞书通知，正式任务未自动重试。
+
+## 2026-10-16 微博重采集入库唯一约束冲突
+
+- 原任务 `job_01792073838529488002_2f7bf1fcf8` 第 6 次尝试停于 VERIFYING_MEDIA。旧图片重采集分支新建相同 `(source_id, external_id)` 的记录，违反唯一约束；此前回归使用不同 external_id，漏掉实际场景。
+- 重采集显式传入原 media_id，校验来源、外部 ID 和旧 VIDEO 图片类型后更新原媒体及资产指向；新文件写入独立 reacquired 目录，原文件全部保留。无需数据库迁移或 API 变更。
+- 相同 ID 回归验证媒体 ID 不变、原文件保留、新 VIDEO 解析及字幕检索成功。数据库异常不再输出 SQL 参数或下载元数据，约束错误不自动重试。完整后端 476 项、追加 Worker 测试 3 项及相关 Ruff/diff 检查通过；全量有 9 条已有 Alembic 弃用警告。
+- 确认数据库无活跃任务后停止空闲 Worker PID 11184；桌面 supervisor 已启动新 Worker PID 36428（启动器 36440）。原任务未重试，未调用分析模型或发送飞书通知，真实后续转写/分析尚待重试验证。
+
+## 2026-10-15 修复后重试仍失败：旧 Worker 未重启
+
+- 22:59:52 的原微博任务重试仍由 `blackhole_2026-49076-6627a8` 执行，事件显示“复用本地媒体”，媒体 ID 仍指向原 JPG。该 Worker 于 22:20:32 启动，早于 pipeline/tools 的 22:29:16 修复；Gateway 于 22:53:59 重启未更新独立 Worker。
+- 确认数据库无 RUNNING/PENDING/RETRY_WAIT 任务并核实进程身份后，停止空闲旧 Worker PID 49076；桌面 WorkerSupervisor 已于 23:24:41 自动拉起新 Worker PID 54376（启动器 16864），加载当前工作区代码。没有关闭桌面或重启 Gateway，原任务仍为 FAILED/attempt 3，未自动重试或发送消息。用户可直接再次重试，无需再重启桌面。
+
+## 2026-10-15 飞书重试把 Cookies 配置状态误读为失败原因
+
+- CollectionService.retry 原先对任何摄取失败都附加“本次任务没有可用的 Cookies 配置”；飞书模型据此把 INVALID_MEDIA 推断成缺登录凭据。该字段仅反映配置状态，不能解释已确认的微博预览 JPG 无音轨问题。
+- 重试正文现在仅在上次错误为 AUTH_REQUIRED 且无 Cookies 时提示检查凭据；其他错误只报告按当前配置重试。工具结果新增 diagnostic_note，明确以错误码和失败阶段为准，不得把 INVALID_MEDIA 推断为缺少 Cookies。保留 cookies_refreshed 配置字段兼容性。
+- 139 项采集服务/消息契约测试通过，包含 INVALID_MEDIA、AUTH_REQUIRED、RATE_LIMITED 三种无 Cookies 重试分支。需重启 Gateway 加载；未发送真实飞书消息。
+
+## 2026-10-15 微博视频在 ASR 抽取音频阶段失败
+
+- 原任务 `job_01792073838529488002_2f7bf1fcf8` 的 VIDEO 资产实际是 `source.jpg`（image2/mjpeg、0.04 秒）。保存的下载元数据包含 scrubber_hd JPG（高 320）和两个真正 MP4（高 960/1280）；任务 max_height=720，原格式选择器先匹配了预览图片，未进入不限高度的视频回退。
+- YtDlpAdapter 在每个视频格式选择分支（含最后回退）排除图片/预览格式；FFprobeAdapter 拒绝将图片容器当作可播放视频。Worker 重试遇到旧 VIDEO 图片资产时重新采集，保留原媒体记录及文件，不修改或删除原任务数据来绕过状态机。
+- 使用原链接、原 720 设置和 Cookies 隔离副本真实下载，得到 MP4（760.105 秒），经实际 FFprobe/FFmpeg 成功提取 16 kHz 单声道 WAV（760.107 秒）。验证文件保存在配置存储根下 `temp/weibo-asr-validation-n5yijbdq`；未调用 ASR 模型/知识分析、发送飞书消息或改变原任务状态。
+- 41 项定向测试及 473 项 VKC 全量后端测试通过，覆盖真实 yt-dlp 格式选择器、图片校验、旧图片任务恢复与文件保留；相关 Ruff lint/format 和 diff 检查通过（全量测试有 9 条已有 Alembic 弃用警告）。重启 Worker（桌面托管则完整退出重开 Hermes Desktop）后，点击原任务重试即可加载修复。
+
+## 2026-10-14 微博通知结论限制为 140 字
+
+- KnowledgeService 按媒体关联 Source.platform 为微博生成最多 140 字的通知摘要，提示词、JSON Schema 和返回值校验采用同一限制，超限会重试；完整知识文档保持原样。
+- NotificationDispatcher 按持久化来源平台识别微博（包括短链），阅读版和纯结论分享版使用同一段最多 140 字的结论。旧摘要和无有效摘要时的备用 summary 也限制长度；转义字符、标点及省略号计入限制，避免截断 Markdown 转义。
+- 新增 140/141 字边界、短摘要、备用结论、转义、两份消息一致性、模型超限重试和不同平台生成限制回归；相关定向测试 55 项及完整 VKC 后端测试 465 项通过，Ruff lint/format 与 diff 检查通过。全量测试有 9 条已有 Alembic 配置弃用警告。
+- README 和飞书通知文档同步；需重启 Gateway 与 Worker（桌面托管 Worker 则重开桌面端）加载代码。未发送真实飞书消息，历史已投递消息不会自动改写。
+
+## 2026-10-11 YouTube 设置 Cookies 后桌面重试仍失败
+
+- 只读检查原任务发现 input_json 无 cookies_file，而 `media.cookies` 已有 YouTube 文件（存在、21 条 YouTube Cookies，6 条主要登录 Cookies，无按导出过期时间过期的主要登录 Cookie）。桌面重试经 JobStateMachine 原样复用输入；飞书 CollectionService 重试会刷新配置，但 Worker 原先只读任务级路径/启动时通用路径，遗漏平台设置。
+- WorkerRunner 现将同一数据库、同一 profile 的 CookieSettingsService 交给摄取流水线。远程任务没有专用 Cookies 时，每次执行查询来源平台的当前设置；专用路径仍优先，本地导入不查询平台 Cookies。新回归验证排队后配置生效，探测/下载/字幕都获得同一路径，且不覆盖任务专用文件。
+- 用真实原链接和用户文件的隔离副本探测，现有登录 Cookies 和当前 yt-dlp 默认客户端均被 YouTube 的“Sign in to confirm you're not a bot”拒绝；没有检测到显式 Cookies 过期/失效警告。因此还存在外部人机验证限制，不能把加载配置修复描述成已能下载。媒体适配器保留 AUTH_REQUIRED，但针对 not-a-bot 输出固定中文说明和同代理出口验证/重新导出提示，不暴露原始响应、Cookies、路径或签名 URL。
+- 未修改原 Cookies、任务或运行中服务，未下载媒体/调用模型/发飞书。需重启 Worker（桌面托管需完整退出重开 Desktop）；继续失败时需浏览器同出口验证并重新导出 Cookies。README 同步说明。
+- 455 项 VKC 后端测试、35 项定向测试及相关 Ruff lint/format、diff 检查通过。修改文件为 `worker/pipeline.py`、`worker/runner.py`、`media_adapters/tools.py`、两处测试及 README/项目记忆。
+
+## 2026-10-11 YouTube 系统代理与 DNS 校验不一致
+
+- `job_01791730802843957500_fdccff2d88` 在 CREATED 阶段失败，错误为 UNSAFE_URL。只读查询确认无 YouTube Cookies。系统解析 www.youtube.com 同时返回 `69.171.235.22` 和非公网 IPv6 `2001::1`；Windows 已启用 `127.0.0.1:7890` HTTP 代理，但原 MessagingUrlGuard 强制检查本地 DNS，且短链请求禁用环境代理，与 yt-dlp 的实际路由不一致。
+- Guard 现复用当前 yt-dlp 的代理选择/规范化规则，优先显式配置，否则读取环境/Windows 代理并保留 NO_PROXY。仅允许白名单平台页面通过 HTTP(S)/远端 DNS SOCKS 代理委托解析；直连和任意直播流仍检查全部 DNS 返回。短链每一跳仍验证平台/URL，并按该跳选择代理。
+- CollectionService 和 Worker 传入配置代理；Worker 对探测、媒体和字幕下载显式传递所选路由。空代理字符串现在传给 yt-dlp `--proxy ""`，防止已判定直连后工具重新自动选择代理。新增代理/直连/绕过/短链攻击和跨阶段路由一致性测试，测试隔离开发机系统代理。
+- 原任务链接通过真实系统代理完成入口校验；真实 yt-dlp 探测已越过 UNSAFE_URL，随后返回 AUTH_REQUIRED。需配置有效 YouTube Cookies 后再重试；未下载媒体、调用分析、发送飞书消息或改动原任务。部署需重启 Gateway 和 Worker（桌面托管 Worker 随 Desktop 完整退出重开）。
+- 452 项 VKC 测试、49 项媒体适配器定向测试及后端/测试 Ruff lint、format 通过；最后补充探测落地 URL 的代理重选后再次验证 Worker 定向测试。代理规则复用固定版本 yt-dlp 的 helper，依赖升级时需保留兼容性回归。
+
+## 2026-10-11 飞书 YouTube 视频采集
+
+- 飞书 `collect_video` 和显式“采集/分析”快速入口现支持 YouTube `watch?v=`、`youtu.be`、Shorts、embed 及 `/live/{视频ID}` 回放链接。域名严格限定为 youtube.com/www/m 与 youtu.be，视频 ID 限 11 位；统一为 HTTPS watch 地址并去除列表、分享和时间参数，只采集单个视频。频道页、播放列表主页和重复/非法视频 ID 拒绝。
+- `MessagingUrlGuard` 接受 YouTube 视频提取器结果，继续验证平台、落地 URL 和公网 DNS；短链直接从 ID 规范化，无需访问跳转地址。沿用 YouTube Cookies、下载、字幕、ASR 和分析流程；正在进行的 YouTube 直播仍由 Worker 拒绝，不接入持续录制。
+- 新增链接形态/恶意输入、快速入口、真实 URL guard 加隔离数据库入队去重、Cookies 传递及 Worker 字幕入库回归；媒体网络调用使用测试替身。README 同步支持范围和使用说明，无需数据库迁移或 API 类型变更。
+- 完整 `scripts/check.ps1` 通过：442 VKC、148 Gateway、78 飞书适配器、1 安装脚本、122 Desktop 测试，以及 Ruff/format、Desktop typecheck/lint；`messaging_tools.py` 单独 lint/format 通过。
+- 未改用户媒体、配置或运行中服务，未执行真实 YouTube 下载或飞书发送。需重启 Gateway 和 Worker；桌面托管 Worker 需完整退出并重开 Hermes Desktop。已有未跟踪目录 `yt_tmp/` 保持原样。
+
 ## 2026-10-11 飞书阅读与结论分享双消息
 
 - 成功及 PARTIAL 分析通知先保留现有阅读格式（标题、作者、时长、结论、完整结果提示与追踪信息），再发送仅含相同结论的分享副本；分享副本无标题、标签或通知编号。两份内容复用已校验短摘要或完整 summary，并保留 Markdown 安全转义。
